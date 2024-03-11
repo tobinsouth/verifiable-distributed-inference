@@ -1,42 +1,46 @@
-
+import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader
 import torchvision
 import torchvision.transforms as transforms
+from torch.utils.data import DataLoader
 from tqdm import tqdm
-import os
 
 # Training Parameters
-batch_size = 64
-epochs = 5
-device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
-# device = "cpu"
+BATCH_SIZE = 64
+EPOCHS = 5
+DEVICE = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
+PROOFS_DIR = "proofs"
 
 
-# Smaller CNN Model
-class SmallCNN(nn.Module):
+# SimpleNet Model Definition
+class SimpleNet(nn.Module):
     def __init__(self):
-        super(SmallCNN, self).__init__()
-        self.features = nn.Sequential(
-            nn.Conv2d(1, 32, kernel_size=3, stride=2, padding=1), 
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),
+        super(SimpleNet, self).__init__()
+        self.conv_layers = nn.Sequential(
+            nn.Conv2d(1, 8, kernel_size=3, stride=1, padding=1),  # Using fewer filters
+            nn.ReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2),
         )
-        self.classifier = nn.Sequential(
-            nn.Dropout(),
-            nn.Linear(64 * 2 * 2, 128),
-            nn.Linear(128, 10),
-            nn.Softmax(dim=1)
+        self.fc_layers = nn.Sequential(
+            nn.Linear(8 * 14 * 14, 10),  # Directly to output, no hidden layers
+            nn.Softmax(dim=1),
         )
 
     def forward(self, x):
-        x = self.features(x)
+        x = self.conv_layers(x)
         x = torch.flatten(x, 1)
-        x = self.classifier(x)
+        x = self.fc_layers(x)
         return x
+
+
+def split_model(model):
+    # Split point: Example, after the convolutional layers
+    model_part1 = nn.Sequential(*list(model.children())[:1])
+    model_part2 = nn.Sequential(*list(model.children())[1:])
+    return model_part1, model_part2
+
 
 # MNIST Datasets
 transform = transforms.Compose([
@@ -44,24 +48,24 @@ transform = transforms.Compose([
     transforms.Normalize((0.1307,), (0.3081,))  # MNIST normalization
 ])
 
-trainset = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transform)
-trainloader = DataLoader(trainset, batch_size=batch_size, shuffle=True)
+train_set = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transform)
+train_loader = DataLoader(train_set, batch_size=BATCH_SIZE, shuffle=True)
 
-testset = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=transform)
-testloader = DataLoader(testset, batch_size=batch_size, shuffle=False)
+test_set = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=transform)
+test_loader = DataLoader(test_set, batch_size=BATCH_SIZE, shuffle=False)
 
 # Initialize the network and optimizer
-net = SmallCNN()
+net = SimpleNet()
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(net.parameters(), lr=0.001)
-net.to(device)
+net.to(DEVICE)
 
 # Train the network
-for epoch in range(epochs):
+for epoch in range(EPOCHS):
     running_loss = 0.0
-    for i, data in enumerate(tqdm(trainloader), 0):
+    for i, data in enumerate(tqdm(train_loader), 0):
         inputs, labels = data
-        inputs, labels = inputs.to(device), labels.to(device)
+        inputs, labels = inputs.to(DEVICE), labels.to(DEVICE)
 
         optimizer.zero_grad()
 
@@ -77,28 +81,18 @@ for epoch in range(epochs):
             running_loss = 0.0
 
 print('Finished Training')
-
-
 # Now we split up the model
-
-net.to("cpu")
-
-def split_model(model):
-    # Split point: Example, after the convolutional layers
-    model_part1 = nn.Sequential(*list(model.children())[:1])  
-    model_part2 = nn.Sequential(*list(model.children())[1:]) 
-    return model_part1, model_part2
+net.to(DEVICE)
 
 model_part1, model_part2 = split_model(net)
 
+# Export the model to ONNX
+os.makedirs(PROOFS_DIR, exist_ok=True)
 
-# Export the model to ONNX    
-os.makedirs("proofs", exist_ok=True)
-
-dummy_input = torch.rand(inputs[0].unsqueeze(0).shape) # Unbatched input
-torch.onnx.export(model_part1, dummy_input, "proofs/model_part1.onnx", verbose=True)
+dummy_input = torch.rand(inputs[0].unsqueeze(0).shape)  # Unbatched input
+torch.onnx.export(model_part1, dummy_input, f"{PROOFS_DIR}/model_part1.onnx", verbose=True)
 
 intermediate_output = model_part1(dummy_input)
 intermediate_output = torch.flatten(intermediate_output, 1)
 
-torch.onnx.export(model_part2, intermediate_output, "proofs/model_part2.onnx", verbose=True)
+torch.onnx.export(model_part2, intermediate_output, f"{PROOFS_DIR}/model_part2.onnx", verbose=True)
