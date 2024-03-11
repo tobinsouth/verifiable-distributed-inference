@@ -32,17 +32,17 @@ def setup_proof(model_path, postfix, example_data):
     ezkl.compile_circuit(model_path, circuit_path, settings_path)
     ezkl.setup(circuit_path, vk_path, pk_path)
 
-    return circuit_path, vk_path, pk_path, example_output
+    return circuit_path, vk_path, pk_path, example_output, settings_path
 
 
-def setup_proof(model_path, postfix, example_data):
+def cli_setup_proof(model_path, postfix, example_data):
     settings_path= f"proofs/settings{postfix}.json"
     data_path = f"proofs/example_input{postfix}.json"
     circuit_path = f"proofs/compiled_circuit{postfix}.ezkl"
     vk_path = f"proofs/vk{postfix}.key"
     pk_path = f"proofs/pk{postfix}.key"
 
-    ezkl.gen_settings(model_path, settings_path, py_run_args=py_run_args)
+    os.system(f"ezkl gen-settings -M {model_path} -O {settings_path}")
 
     session = onnxruntime.InferenceSession(model_path)
     example_output = session.run(None, {"input.1": example_data})[0]
@@ -52,12 +52,12 @@ def setup_proof(model_path, postfix, example_data):
                 output_data=[o.reshape([-1]).tolist() for o in example_output])
     json.dump(witness_data, open(data_path, 'w'))
 
-    ezkl.calibrate_settings(data_path, model_path, settings_path, "accuracy")
-    ezkl.get_srs(settings_path)
-    ezkl.compile_circuit(model_path, circuit_path, settings_path)
-    ezkl.setup(circuit_path, vk_path, pk_path)
+    os.system(f"ezkl calibrate-settings -D {data_path} -M {model_path} -O {settings_path}")
+    os.system(f"ezkl get-srs -S {settings_path}")
+    os.system(f"ezkl compile-circuit -M {model_path} --compiled-circuit {circuit_path} -S {settings_path}")
+    os.system(f"ezkl setup --compiled-circuit {circuit_path} --vk-path {vk_path} --pk-path {pk_path}")
 
-    return circuit_path, vk_path, pk_path, example_output
+    return circuit_path, vk_path, pk_path, example_output, settings_path
 
 
 # Now we can run the proof
@@ -75,7 +75,6 @@ def cli_run_proof(circuit_path, pk_path, input_data, prefix):
 
     return proof_path
 
-
 def run_proof(circuit_path, pk_path, input_data, prefix):
     proof_path = f"proofs/proof{prefix}.json"
     witness_path = f"proofs/witness{prefix}.json"
@@ -90,6 +89,11 @@ def run_proof(circuit_path, pk_path, input_data, prefix):
 
     return proof_path
 
+def cli_verify_run(vk_path, proof_path, settings_path):
+    os.system(f"ezkl verify --vk-path {vk_path} --proof-path {proof_path} -S {settings_path}")    
+
+def verify_run(vk_path, proof_path, settings_path):
+    ezkl.verify(vk_path, proof_path, settings_path)
 
 
 
@@ -109,9 +113,9 @@ testloader = DataLoader(testset, batch_size=1, shuffle=False)
 # If that fails, try the cli version
 example_data = next(iter(testloader))[0].numpy()
 
-circuit_path_1, vk_path_1, pk_path_1, example_output = cli_setup_proof(model1, 1, example_data)
+circuit_path_1, vk_path_1, pk_path_1, example_output, settings_path_1 = cli_setup_proof(model1, 1, example_data)
 example_output_flat = torch.flatten(torch.tensor(example_output),1 ).numpy()
-circuit_path_2, vk_path_2, pk_path_2, _ = cli_setup_proof(model2, 2, example_output_flat)
+circuit_path_2, vk_path_2, pk_path_2, _, settings_path_2 = cli_setup_proof(model2, 2, example_output_flat)
 
 proof_path_1 = cli_run_proof(circuit_path_1, pk_path_1, example_data, 1)
 proof_content = json.load(open(proof_path_1))
