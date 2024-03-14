@@ -1,6 +1,5 @@
 torch==2.2.1
 torchvision==0.17.1
 ezkl==9.5.0
-numpy==1.26.4
 onnxruntime==1.17.1
 
