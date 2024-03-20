@@ -70,7 +70,7 @@ def get_number_of_shards(model_id):
             match_shard_id = int(match.group(1))
             if match_shard_id > highest_shard_id:
                 highest_shard_id = match_shard_id
-    return highest_shard_id
+    return highest_shard_id + 1
 
 
 # Generates ezkl proof for shard `shard_id`. Requires the output of the previous shard as input for subsequent one.
@@ -172,7 +172,7 @@ if __name__ == '__main__':
     num_shards = get_number_of_shards(MODEL_ID)
     print(f"Identified {num_shards} shards for model {MODEL_ID}")
     previous_shard_output = None
-    for shard_id in range(num_shards + 1):
+    for shard_id in range(num_shards):
         previous_shard_output, shard_proof_path, shard_settings_path, shard_vk_path, shard_srs_path = generate_proof(
             shard_id=shard_id,
             previous_shard_output=previous_shard_output
