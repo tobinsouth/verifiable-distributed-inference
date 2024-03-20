@@ -18,7 +18,7 @@ epochs = 5
 batch_size = 64
 MODEL_DIR = "./model"
 DATA_DIR = "./data"
-MODEL_FILE = "model.onnx"
+MODEL_ID = "model"
 
 
 # Define Model, Train and Test functions
@@ -111,6 +111,7 @@ if __name__ == "__main__":
 
     # Save Model
     sample_input_tensor = torch.randn(1, 1, 28, 28).to(device)
-    torch.onnx.export(model, sample_input_tensor, f"{MODEL_DIR}/{MODEL_FILE}", verbose=True, input_names=['input'],
+    MODEL_PATH = f"{MODEL_DIR}/{MODEL_ID}.onnx"
+    torch.onnx.export(model, sample_input_tensor, MODEL_PATH, verbose=True, input_names=['input'],
                       output_names=['output'])
-    print(f"Saved Model to {MODEL_DIR}/{MODEL_FILE}")
+    print(f"Saved Model to {MODEL_PATH}")
