@@ -135,5 +135,7 @@ if __name__ == "__main__":
     os.makedirs(PROOF_DIR, exist_ok=True)
     # Generate Proof
     proof_path, settings_path, vk_path, srs_path = generate_proof()
+    print(f"Generated proof for {MODEL_ID} at {proof_path}")
     # Verify Proof
     verify_proof(proof_path, settings_path, vk_path, srs_path)
+    print(f"Verified proof for {MODEL_ID}")
