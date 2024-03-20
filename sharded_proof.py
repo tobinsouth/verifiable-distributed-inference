@@ -170,6 +170,7 @@ def verify_proof(proof_path, settings_path, vk_path, srs_path):
 # Prove Shard(s)
 if __name__ == '__main__':
     num_shards = get_number_of_shards(MODEL_ID)
+    print(f"Identified {num_shards} shards for model {MODEL_ID}")
     previous_shard_output = None
     for shard_id in range(num_shards + 1):
         previous_shard_output, shard_proof_path, shard_settings_path, shard_vk_path, shard_srs_path = generate_proof(
