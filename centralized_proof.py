@@ -18,16 +18,6 @@ PROOF_DIR = "./proof"
 EZKL_OPTIMIZATION_GOAL = "resources"
 MODEL_ID = "model"
 
-MODEL_PATH = f"{MODEL_DIR}/{MODEL_ID}.onnx"
-SETTINGS_PATH = f"{PROOF_DIR}/{MODEL_ID}_settings.json"
-DATA_PATH = f"{PROOF_DIR}/{MODEL_ID}_data.json"
-COMPILED_MODEL_PATH = f"{PROOF_DIR}/{MODEL_ID}_network.compiled"
-SRS_PATH = f"{PROOF_DIR}/{MODEL_ID}_kzg.srs"
-VK_PATH = f"{PROOF_DIR}/{MODEL_ID}_vk.key"
-PK_PATH = f"{PROOF_DIR}/{MODEL_ID}_pk.key"
-WITNESS_PATH = f"{PROOF_DIR}/{MODEL_ID}_witness.json"
-PROOF_PATH = f"{PROOF_DIR}/{MODEL_ID}_proof.pf"
-
 # Setup & Helper Functions
 def fetch_test_data():
     test_data = torchvision.datasets.MNIST(root=DATA_DIR, train=False, download=False,
@@ -53,80 +43,90 @@ def generate_example_model_output(model_path, data_path):
     return data_path
 
 def generate_proof():
+    model_path = f"{MODEL_DIR}/{MODEL_ID}.onnx"
+    settings_path = f"{PROOF_DIR}/{MODEL_ID}_settings.json"
+    data_path = f"{PROOF_DIR}/{MODEL_ID}_data.json"
+    compiled_model_path = f"{PROOF_DIR}/{MODEL_ID}_network.compiled"
+    srs_path = f"{PROOF_DIR}/{MODEL_ID}_kzg.srs"
+    vk_path = f"{PROOF_DIR}/{MODEL_ID}_vk.key"
+    pk_path = f"{PROOF_DIR}/{MODEL_ID}_pk.key"
+    witness_path = f"{PROOF_DIR}/{MODEL_ID}_witness.json"
+    proof_path = f"{PROOF_DIR}/{MODEL_ID}_proof.pf"
+
     # Generate Settings File
     res = ezkl.gen_settings(
-        model=MODEL_PATH,
-        output=SETTINGS_PATH,
+        model=model_path,
+        output=settings_path,
         py_run_args=PY_RUN_ARGS
     )
     assert res == True
 
     # Calibrate Settings
-    DATA_PATH = generate_example_model_output(MODEL_PATH, DATA_PATH)
+    data_path = generate_example_model_output(model_path, data_path)
     res = ezkl.calibrate_settings(
-        data=DATA_PATH,
-        model=MODEL_PATH,
-        settings=SETTINGS_PATH,
+        data=data_path,
+        model=model_path,
+        settings=settings_path,
         target=EZKL_OPTIMIZATION_GOAL
     )
     assert res == True
 
     # Compile model to a circuit
     res = ezkl.compile_circuit(
-        model=MODEL_PATH,
-        compiled_circuit=COMPILED_MODEL_PATH,
-        settings_path=SETTINGS_PATH
+        model=model_path,
+        compiled_circuit=compiled_model_path,
+        settings_path=settings_path
     )
     assert res == True
 
     # (Down)load an SRS String
     res = ezkl.get_srs(
-        settings_path=SETTINGS_PATH,
+        settings_path=settings_path,
         logrows=None,
-        srs_path=SRS_PATH
+        srs_path=srs_path
     )
     assert res == True
-    assert os.path.isfile(SRS_PATH)
+    assert os.path.isfile(srs_path)
 
     # Setup Proof
     res = ezkl.setup(
-        model=COMPILED_MODEL_PATH,
-        vk_path=VK_PATH,
-        pk_path=PK_PATH,
-        srs_path=SRS_PATH
+        model=compiled_model_path,
+        vk_path=vk_path,
+        pk_path=pk_path,
+        srs_path=srs_path
     )
     assert res == True
-    assert os.path.isfile(VK_PATH)
-    assert os.path.isfile(PK_PATH)
+    assert os.path.isfile(vk_path)
+    assert os.path.isfile(pk_path)
 
     # Generate witness file
     res = ezkl.gen_witness(
-        data=DATA_PATH,
-        model=COMPILED_MODEL_PATH,
-        output=WITNESS_PATH
+        data=data_path,
+        model=compiled_model_path,
+        output=witness_path
     )
-    assert os.path.isfile(WITNESS_PATH)
+    assert os.path.isfile(witness_path)
 
     # Create ZK-SNARK for the execution of the model
     res = ezkl.prove(
-        witness=WITNESS_PATH,
-        model=COMPILED_MODEL_PATH,
-        pk_path=PK_PATH,
-        proof_path=PROOF_PATH,
-        srs_path=SRS_PATH
+        witness=witness_path,
+        model=compiled_model_path,
+        pk_path=pk_path,
+        proof_path=proof_path,
+        srs_path=srs_path
     )
-    assert os.path.isfile(PROOF_PATH)
+    assert os.path.isfile(proof_path)
 
-    return PROOF_PATH, SETTINGS_PATH, VK_PATH, SRS_PATH
+    return proof_path, settings_path, vk_path, srs_path
 
 
-def verify_proof():
+def verify_proof(proof_path, settings_path, vk_path, srs_path):
     # Verify proof
     res = ezkl.verify(
-        proof_path=PROOF_PATH,
-        settings_path=SETTINGS_PATH,
-        vk_path=VK_PATH,
-        srs_path=SRS_PATH
+        proof_path=proof_path,
+        settings_path=settings_path,
+        vk_path=vk_path,
+        srs_path=srs_path
     )
     assert res == True
 
@@ -134,6 +134,6 @@ def verify_proof():
 if __name__ == "__main__":
     os.makedirs(PROOF_DIR, exist_ok=True)
     # Generate Proof
-    generate_proof()
+    proof_path, settings_path, vk_path, srs_path = generate_proof()
     # Verify Proof
-    verify_proof()
+    verify_proof(proof_path, settings_path, vk_path, srs_path)
