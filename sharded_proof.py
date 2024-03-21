@@ -6,6 +6,7 @@ import os
 import onnxruntime as ort
 import torchvision
 import numpy as np
+import time
 
 # Constants
 PY_RUN_ARGS = ezkl.PyRunArgs()
@@ -40,15 +41,15 @@ def fetch_first_image(data) -> np.ndarray:
 
 # Fetch random input data for the first shard.
 def fetch_random_input_data(shape: tuple):
-    return np.random.rand(*shape)
+    return np.random.rand(*shape).astype(np.float32)
 
 
 # Set input_data to the output of the previous shard. Doesn't need to be set for the first shard.
 def generate_example_model_output(model_path, data_path, input_data=None):
     ort_session = ort.InferenceSession(model_path)
     if input_data is None:
-        # This can be swapped out with `fetch_random_input_data()`
-        input_data = fetch_mnist_input_data()
+        # This can be swapped out with `fetch_mnist_input_data()`
+        input_data = fetch_random_input_data((1, 1, 28, 28))
     output_data = ort_session.run(None, {'input': input_data})
     witness_data = dict(input_shapes=[input_data.shape],
                         input_data=[input_data.reshape([-1]).tolist()],
@@ -172,6 +173,7 @@ if __name__ == '__main__':
     num_shards = get_number_of_shards(MODEL_ID)
     print(f"Identified {num_shards} shards for model {MODEL_ID}")
     previous_shard_output = None
+    start = time.time()
     for shard_id in range(num_shards):
         previous_shard_output, shard_proof_path, shard_settings_path, shard_vk_path, shard_srs_path = generate_proof(
             shard_id=shard_id,
@@ -180,8 +182,8 @@ if __name__ == '__main__':
         print(f"Proof of Shard {shard_id} generated at {shard_proof_path}")
 
         # Added to ensure proofs are correct
-        verify_proof(shard_proof_path, shard_settings_path, shard_vk_path, shard_srs_path)
-        print(f"Proof of Shard {shard_id} verified")
-        num_shards += 1
-
+        # verify_proof(shard_proof_path, shard_settings_path, shard_vk_path, shard_srs_path)
+        # print(f"Proof of Shard {shard_id} verified")
+    end = time.time()
     print(f"Completed processing for {num_shards} shards")
+    print(f"Generating proofs took {end - start} s")

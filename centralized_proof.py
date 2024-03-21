@@ -5,6 +5,7 @@ import os
 import onnxruntime as ort
 import torchvision
 import numpy as np
+import time
 
 # Constants
 PY_RUN_ARGS = ezkl.PyRunArgs()
@@ -16,7 +17,7 @@ DATA_DIR = "./data"
 PROOF_DIR = "./proof"
 # Either resources or accuracy
 EZKL_OPTIMIZATION_GOAL = "resources"
-MODEL_ID = "model"
+MODEL_ID = "model_1"
 
 # Setup & Helper Functions
 def fetch_test_data():
@@ -133,9 +134,12 @@ def verify_proof(proof_path, settings_path, vk_path, srs_path):
 
 if __name__ == "__main__":
     os.makedirs(PROOF_DIR, exist_ok=True)
+    start = time.time()
     # Generate Proof
     proof_path, settings_path, vk_path, srs_path = generate_proof()
+    end = time.time()
     print(f"Generated proof for {MODEL_ID} at {proof_path}")
+    print(f"Generating proof took {end - start}s")
     # Verify Proof
     verify_proof(proof_path, settings_path, vk_path, srs_path)
     print(f"Verified proof for {MODEL_ID}")

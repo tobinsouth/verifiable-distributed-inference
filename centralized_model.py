@@ -5,6 +5,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 from torchvision import datasets
 from torchvision.transforms import ToTensor
+import time
 
 # Constants
 device = (
@@ -18,7 +19,7 @@ epochs = 5
 batch_size = 64
 MODEL_DIR = "./model"
 DATA_DIR = "./data"
-MODEL_ID = "model"
+MODEL_ID = "model_1"
 
 
 # Define Model, Train and Test functions
@@ -26,18 +27,20 @@ class Model(nn.Module):
     def __init__(self):
         super().__init__()
         self.flatten = nn.Flatten()
-        self.linear_relu_stack = nn.Sequential(
-            nn.Linear(28 * 28, 512),
-            nn.ReLU(),
-            nn.Linear(512, 512),
-            nn.ReLU(),
-            nn.Linear(512, 10)
-        )
+        self.linear1 = nn.Linear(28 * 28, 512)
+        self.relu1 = nn.ReLU()
+        self.linear2 = nn.Linear(512, 512)
+        self.relu2 = nn.ReLU()
+        self.linear3 = nn.Linear(512, 10)
 
     def forward(self, x):
         x = self.flatten(x)
-        logits = self.linear_relu_stack(x)
-        return logits
+        x = self.linear1(x)
+        x = self.relu1(x)
+        x = self.linear2(x)
+        x = self.relu2(x)
+        x = self.linear3(x)
+        return x
 
 
 def train(dataloader, model, loss_fn, optimizer):
@@ -110,8 +113,11 @@ if __name__ == "__main__":
     print("Finished Training")
 
     # Save Model
+    start = time.time()
     sample_input_tensor = torch.randn(1, 1, 28, 28).to(device)
     MODEL_PATH = f"{MODEL_DIR}/{MODEL_ID}.onnx"
     torch.onnx.export(model, sample_input_tensor, MODEL_PATH, verbose=True, input_names=['input'],
                       output_names=['output'])
+    end = time.time()
     print(f"Saved Model to {MODEL_PATH}")
+    print(f"Time taken: {end - start}s")

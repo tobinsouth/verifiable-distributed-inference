@@ -5,6 +5,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 from torchvision import datasets
 from torchvision.transforms import ToTensor
+import time
 
 # Constants
 # Define constants
@@ -28,20 +29,19 @@ class Model(nn.Module):
     def __init__(self):
         super().__init__()
         self.flatten = nn.Flatten()
-        self.stack_1 = nn.Sequential(
-            nn.Linear(28 * 28, 512),
-            nn.ReLU()
-        )
-        self.stack_2 = nn.Sequential(
-            nn.Linear(512, 512),
-            nn.ReLU(),
-            nn.Linear(512, 10)
-        )
+        self.linear1 = nn.Linear(28 * 28, 512)
+        self.relu1 = nn.ReLU()
+        self.linear2 = nn.Linear(512, 512)
+        self.relu2 = nn.ReLU()
+        self.linear3 = nn.Linear(512, 10)
 
     def forward(self, x):
         x = self.flatten(x)
-        x = self.stack_1(x)
-        x = self.stack_2(x)
+        x = self.linear1(x)
+        x = self.relu1(x)
+        x = self.linear2(x)
+        x = self.relu2(x)
+        x = self.linear3(x)
         return x
 
 
@@ -126,6 +126,7 @@ if __name__ == "__main__":
 
     # Save shards
     sample_input_tensor = torch.randn(1, 1, 28, 28).to(DEVICE)
+    start = time.time()
     for i in range(len(shards)):
         MODEL_FILE = f"{MODEL_SPLIT_PREFIX}_shard_{i}.onnx"
         model_shard = shards[i]
@@ -142,3 +143,6 @@ if __name__ == "__main__":
         # Update sample input tensor for next layer/stack of layers
         model_shard.eval()
         sample_input_tensor = model_shard(sample_input_tensor)
+
+    end = time.time()
+    print(f"Time taken: {end - start}")
