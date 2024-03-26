@@ -2,6 +2,7 @@ from torch import nn
 import torch
 import numpy as np
 
+VERBOSE = False
 
 class Processor:
     # Prefix used in filepath after Model ID, but before Shard ID.
@@ -29,7 +30,7 @@ class Processor:
                 model=self.model,
                 args=sample_input_tensor,
                 f=model_path,
-                verbose=False,
+                verbose=VERBOSE,
                 input_names=['input'],
                 output_names=['output']
             )
@@ -44,7 +45,7 @@ class Processor:
                     model=model_shard,
                     args=sample_input_tensor,
                     f=shard_path,
-                    verbose=True,
+                    verbose=VERBOSE,
                     input_names=['input'],
                     output_names=['output']
                 )
