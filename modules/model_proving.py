@@ -13,8 +13,6 @@ VERBOSE = True
 INPUT_SCALE = 13
 PARAM_SCALE = 13
 
-
-# TODO: FIX THIS ASYNC STUFF
 class Prover:
     def __init__(
         self,
