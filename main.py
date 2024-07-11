@@ -107,17 +107,17 @@ if __name__ == "__main__":
 
     # Instantiate Model
     model = Model().to(DEVICE)
-    loss_fn = nn.CrossEntropyLoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
-
-    if VERBOSE:
-        print("Starting Training")
-    for t in range(EPOCHS):
-        if VERBOSE:
-            print(f"Epoch {t + 1}\n-------------------------------")
-        train(train_dataloader, model, loss_fn, optimizer)
-        test(test_dataloader, model, loss_fn)
-    print("Finished Training")
+    # loss_fn = nn.CrossEntropyLoss()
+    # optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
+    #
+    # if VERBOSE:
+    #     print("Starting Training")
+    # for t in range(EPOCHS):
+    #     if VERBOSE:
+    #         print(f"Epoch {t + 1}\n-------------------------------")
+    #     train(train_dataloader, model, loss_fn, optimizer)
+    #     test(test_dataloader, model, loss_fn)
+    # print("Finished Training")
 
     start = time.time()
     # Instantiate Model Processor
@@ -136,7 +136,7 @@ if __name__ == "__main__":
         storage_dir=MODEL_DIR
     )
 
-    checkpoint = time.time()
+    # checkpoint = time.time()
 
     model_prover = model_proving.Prover(
         model_id=MODEL_ID,
@@ -147,7 +147,7 @@ if __name__ == "__main__":
         param_visibility="fixed",
         ezkl_optimization_goal="resources"
     )
-    model_prover.prove()
+    model_prover.old_prove()
 
-    end = time.time()
+    # end = time.time()
     print(f"Time taken: {end - start}")
