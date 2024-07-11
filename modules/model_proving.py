@@ -6,25 +6,35 @@ import numpy as np
 import onnxruntime as ort
 import json
 
+from modules.file_manager import FileManager
+from utils.helpers import conditional_print
 
+VERBOSE = True
+INPUT_SCALE = 13
+PARAM_SCALE = 13
+
+
+# TODO: FIX THIS ASYNC STUFF
 class Prover:
     def __init__(
         self,
-        model_id: str,
-        model_dir: str,
-        proof_dir: str,
+        file_manager: FileManager,
         input_visibility: str,
         output_visibility: str,
         param_visibility: str,
-        ezkl_optimization_goal: str
+        ezkl_optimization_goal: str,
+        input_scale: int = None,
+        param_scale: int = None
     ):
-        self.model_id = model_id
-        self.model_dir = model_dir
-        self.proof_dir = proof_dir
+        self.file_manager = file_manager
         self.py_run_args = ezkl.PyRunArgs()
         self.py_run_args.input_visibility = input_visibility
         self.py_run_args.output_visibility = output_visibility
         self.py_run_args.param_visibility = param_visibility
+        if input_scale is not None:
+            self.py_run_args.input_scale = input_scale
+        if param_scale is not None:
+            self.py_run_args.param_scale = param_scale
         self.ezkl_optimization_goal = ezkl_optimization_goal
 
     @staticmethod
@@ -49,7 +59,10 @@ class Prover:
         ort_session = ort.InferenceSession(model_path)
         if input_data is None:
             # This can be swapped out to actually fetch real data from the training dataset
+            # Required dimensions for MNIST:
             input_data = Prover.fetch_random_input_data((1, 1, 28, 28))
+        # Required dimensions for model_training Model:
+        # input_data = np.random.rand(*(32, 128, 4096)).astype(np.float16)
         output_data = ort_session.run(None, {'input': input_data})
         witness_data = dict(input_shapes=[input_data.shape],
                             input_data=[input_data.reshape([-1]).tolist()],
@@ -60,9 +73,120 @@ class Prover:
         # it for the next shard.
         return output_data[0]
 
-    # Generates ezkl proof for shard `shard_id`. Requires the output of the previous shard as input for subsequent one.
-    # `previous_shard_output` is not required for the first shard.
-    def generate_proof(self, shard_id: int = None, previous_shard_output=None):
+    # Function runs initial setup for a model.
+    async def setup(self) -> None:
+        # Do not repeat settings steps, if they've been completed before. (calibrating settings takes a while!)
+        if not os.path.isfile(self.file_manager.get_settings_path()):
+            # Generate settings file
+            result_gen_settings = ezkl.gen_settings(
+                model=self.file_manager.get_model_path(),
+                output=self.file_manager.get_settings_path(),
+                py_run_args=self.py_run_args
+            )
+            if not result_gen_settings:
+                conditional_print(f"[ERROR] Unable to generate ezkl settings", VERBOSE)
+
+            # Calibrate settings file with data
+            result_calibrate_settings = await ezkl.calibrate_settings(
+                data=self.file_manager.get_calibration_data_path(),
+                model=self.file_manager.get_model_path(),
+                settings=self.file_manager.get_settings_path(),
+                target=self.ezkl_optimization_goal
+            )
+            if not result_calibrate_settings:
+                conditional_print(f"[ERROR] Unable to calibrate ezkl settings", VERBOSE)
+        else:
+            conditional_print(f"[PREPROCESSING] ezkl settings already generated and calibrated", VERBOSE)
+
+        # Do not repeat circuit compilation steps, if they've been completed before.
+        if not os.path.isfile(self.file_manager.get_compiled_circuit_path()):
+            # Pre-compile model (shard) with ezkl.compile_circuit. This compiled circuit is later used to generate a
+            # witness file for every input-output pair created during inference.
+            result_compile = ezkl.compile_circuit(
+                model=self.file_manager.get_model_path(),
+                compiled_circuit=self.file_manager.get_compiled_circuit_path(),
+                settings_path=self.file_manager.get_settings_path()
+            )
+            if not result_compile:
+                conditional_print(f"[ERROR] Unable to compile model to ezkl circuit", VERBOSE)
+        else:
+            conditional_print(f"[PREPROCESSING] ezkl circuit already compiled", VERBOSE)
+
+        # Do not fetch the srs, if it has been pulled in already (downloading takes a while!)
+        if not os.path.isfile(self.file_manager.get_srs_path()):
+            result_srs= await ezkl.get_srs(
+                settings_path=self.file_manager.get_settings_path(),
+                srs_path=self.file_manager.get_srs_path()
+            )
+            if not result_srs:
+                conditional_print(f"[ERROR] Unable to get SRS", VERBOSE)
+        else:
+            conditional_print(f"[PREPROCESSING] ezkl SRS already downloaded", VERBOSE)
+
+        result_setup = ezkl.setup(
+            model=self.file_manager.get_compiled_circuit_path(),
+            vk_path=self.file_manager.get_vk_path(),
+            pk_path=self.file_manager.get_pk_path(),
+            srs_path=self.file_manager.get_srs_path()
+        )
+        if not result_setup:
+            conditional_print(f"[ERROR] Unable to complete final ezkl setup", VERBOSE)
+
+    # Generate witness file
+    async def generate_witness(self, witness_id: str) -> None:
+        # Fetch raw witness data path (clear-text json data)
+        raw_witness_path: str = self.file_manager.get_raw_witness_path(witness_id)
+        # Wait for the witness to be available if not yet available.
+        while raw_witness_path == "":
+            conditional_print(f"[ERROR] Raw witness file data not available at {raw_witness_path}", VERBOSE)
+            time.sleep(0.5)
+            raw_witness_path = self.file_manager.get_raw_witness_path(witness_id)
+
+        # Fetch real witness data path
+        witness_path: str = self.file_manager.get_witness_path(witness_id)
+        witness_result = await ezkl.gen_witness(
+            data=raw_witness_path,
+            model=self.file_manager.get_compiled_circuit_path(),
+            output=witness_path
+        )
+        file_exists: bool = os.path.isfile(witness_path)
+        if not witness_result or not file_exists:
+            conditional_print(f"[ERROR] Unable to generate ezkl witness at {witness_path}", VERBOSE)
+        else:
+            conditional_print(f'[LOGIC] Witness successfully generated at {witness_path}', VERBOSE)
+
+    # Generates ezkl proof given a previously generated witness file, compiled circuit, etc.
+    def generate_proof_for_witness(self, witness_id: str) -> None:
+        proof_path: str = self.file_manager.get_proof_path(witness_id)
+        prove_result: bool = ezkl.prove(
+            witness=self.file_manager.get_witness_path(witness_id),
+            model=self.file_manager.get_compiled_circuit_path(),
+            pk_path=self.file_manager.get_pk_path(),
+            proof_path=proof_path,
+            srs_path=self.file_manager.get_srs_path()
+        )
+        file_exists: bool = os.path.isfile(proof_path)
+        if not prove_result or not file_exists:
+            conditional_print(f"[ERROR] Unable to generate ezkl proof for witness {witness_id} at {proof_path}", VERBOSE)
+        else:
+            conditional_print(f'[LOGIC] Proof successfully generated at {proof_path}', VERBOSE)
+
+    # Verifies ezkl proof.
+    @staticmethod
+    def verify_proof(proof_path: str, settings_path: str, vk_path: str) -> None:
+        # Verify proof
+        res = ezkl.verify(
+            proof_path=proof_path,
+            settings_path=settings_path,
+            vk_path=vk_path
+        )
+        if not res:
+            conditional_print(f'Proof at {proof_path} NOT valid', VERBOSE)
+        else:
+            conditional_print(f'Proof at {proof_path} valid', VERBOSE)
+
+    """ OUTDATED CODE:
+    def old_generate_proof(self, shard_id: int = None, previous_shard_output=None):
         model_path, settings_path, data_path, compiled_model_path, srs_path, vk_path, pk_path, witness_path, proof_path = (
                                                                                                                               "",) * 9
         # Model wasn't sharded -> no shard_ids
@@ -160,24 +284,12 @@ class Prover:
             # Return the intermediate output of the shard, as this is needed for the subsequent proof.
             return data_output, proof_path, settings_path, vk_path, srs_path
 
-    # Verifies ezkl proof.
-    @staticmethod
-    def verify_proof(proof_path, settings_path, vk_path, srs_path):
-        # Verify proof
-        res = ezkl.verify(
-            proof_path=proof_path,
-            settings_path=settings_path,
-            vk_path=vk_path,
-            srs_path=srs_path
-        )
-        assert res == True
-
-    def prove(self):
+    def old_prove(self):
         num_shards = self.get_number_of_shards(self.model_id, self.model_dir)
         # Handle case where model wasn't sharded.
         if num_shards <= 0:
             start = time.time()
-            proof_path, settings_path, vk_path, srs_path = self.generate_proof()
+            proof_path, settings_path, vk_path, srs_path = self.old_generate_proof()
             print(f"Proof of Shard {self.model_id} generated at {proof_path}")
             end = time.time()
             print(f"Generating proof took {end - start} s")
@@ -188,7 +300,7 @@ class Prover:
             previous_shard_output = None
             start = time.time()
             for shard_id in range(num_shards):
-                previous_shard_output, shard_proof_path, shard_settings_path, shard_vk_path, shard_srs_path = self.generate_proof(
+                previous_shard_output, shard_proof_path, shard_settings_path, shard_vk_path, shard_srs_path = self.old_generate_proof(
                     shard_id=shard_id,
                     previous_shard_output=previous_shard_output
                 )
@@ -200,3 +312,4 @@ class Prover:
             end = time.time()
             print(f"Completed processing for {num_shards} shards")
             print(f"Generating proofs took {end - start} s")
+    """
