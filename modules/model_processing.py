@@ -4,6 +4,7 @@ import os
 from torch import nn
 import torch
 from utils.helpers import conditional_print
+from modules.model_training import MODEL_DIMENSIONS
 
 VERBOSE = True
 
@@ -18,10 +19,15 @@ class Processor:
         self.sample_input = sample_input
         self.shards = []
         # Mapping of paths to model (shards)
-        self.shard_paths = []
+        self.shard_paths: list[str] = []
+        self.shard_dimensions: list[tuple] = []
 
     # Shards model based on NN layers.
     def shard(self, num_shards: int) -> None:
+        if num_shards <= 1:
+            self.shards.append(self.model)
+            self.shard_dimensions.append(MODEL_DIMENSIONS[0])
+            return
         children_list: list = list(self.model.children())
         num_layers: int = len(children_list)
         if num_layers % num_shards != 0:
@@ -32,13 +38,14 @@ class Processor:
             self.shards.append(
                 nn.Sequential(*children_list[i:i + group_size])
             )
+            self.shard_dimensions.append(MODEL_DIMENSIONS[i])
         conditional_print(f'[PREPROCESSING] Split model into {len(self.shards)} shards.', VERBOSE)
 
     # Saves Model / Model Shards.
     def save(self, model_id: str, storage_dir: str) -> None:
         os.makedirs(storage_dir, exist_ok=True)
         # If model wasn't sharded, save it as one file.
-        if len(self.shards) == 0:
+        if len(self.shards) <= 1:
             model_path: str = f"{storage_dir}/{model_id}.onnx"
             self.shard_paths.append(model_path)
             sample_input_tensor = self.sample_input
