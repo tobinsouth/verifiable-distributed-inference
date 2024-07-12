@@ -13,6 +13,7 @@ VERBOSE = True
 INPUT_SCALE = 13
 PARAM_SCALE = 13
 
+
 class Prover:
     def __init__(
         self,
@@ -112,7 +113,7 @@ class Prover:
 
         # Do not fetch the srs, if it has been pulled in already (downloading takes a while!)
         if not os.path.isfile(self.file_manager.get_srs_path()):
-            result_srs= await ezkl.get_srs(
+            result_srs = await ezkl.get_srs(
                 settings_path=self.file_manager.get_settings_path(),
                 srs_path=self.file_manager.get_srs_path()
             )

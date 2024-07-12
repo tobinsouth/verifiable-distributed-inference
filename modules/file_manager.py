@@ -8,7 +8,9 @@ COORDINATOR_SUB_DIR = "/coordinator"
 # Class that streamlines the retrieval of proof-related artefacts.
 # Designed in a way so that it can be easily moved to cloud-storage (currently local storage).
 class FileManager:
-    def __init__(self, model_id: str, shard_id: int):
+    def __init__(self,
+                 model_id: str,
+                 shard_id: int):
         self.model_id: str = model_id
         self.shard_id: int = shard_id
 
