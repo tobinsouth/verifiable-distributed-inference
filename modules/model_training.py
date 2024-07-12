@@ -8,21 +8,12 @@ from torchvision.transforms import ToTensor
 
 # Constants
 # Define constants
-DEVICE = (
-    "cuda"
-    if torch.cuda.is_available()
-    else "mps"
-    if torch.backends.mps.is_available()
-    else "cpu"
-)
+DEVICE = 'cpu'
 
 EPOCHS = 1
 BATCH_SIZE = 64
-
-MODEL_DIR = "./model"
 DATA_DIR = "./data"
 PROOF_DIR = "./proof"
-MODEL_ID = "model_3"
 VERBOSE = False
 
 
@@ -49,11 +40,21 @@ class Model(nn.Module):
         return x
 
 
+# Update this with model definition above.
+MODEL_DIMENSIONS = [
+    (1, 1, 5, 5),
+    (1, 25),
+    (1, 10),
+    (1, 10),
+    (1, 10),
+    (1, 10)
+]
+
+
 class Trainer:
 
     def __init__(self,
                  load_training_data: bool = True):
-        make_dirs()
         self.model = Model().to(DEVICE)
         self.loss_fn = nn.CrossEntropyLoss()
         self.optimizer = torch.optim.SGD(self.model.parameters(), lr=1e-3)
@@ -64,6 +65,7 @@ class Trainer:
             self.load_in_training_data()
 
     def load_in_training_data(self) -> None:
+        os.makedirs(DATA_DIR, exist_ok=True)
         # (Down)load training data
         mnist_folder_exists = os.path.exists(f"{DATA_DIR}/MNIST")
         train_data = datasets.MNIST(
@@ -127,9 +129,4 @@ class Trainer:
         # return torch.randn(1, 1, 28, 28).to(DEVICE)
         return torch.randn(1, 1, 5, 5).to(DEVICE)
 
-
-def make_dirs() -> None:
-    # Setup Training & Testing Data
-    os.makedirs(MODEL_DIR, exist_ok=True)
-    os.makedirs(DATA_DIR, exist_ok=True)
 
