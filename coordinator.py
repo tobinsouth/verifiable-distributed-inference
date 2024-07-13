@@ -24,7 +24,10 @@ RUN_LOGIC = True
 
 
 class Coordinator:
-    def __init__(self, address: Tuple[str, int], num_shards: int):
+    def __init__(self,
+                 address: Tuple[str, int],
+                 num_shards: int,
+                 benchmarking_mode: bool = False):
         self.connections: dict[str, threading.Thread] = {}
         self.handlers: dict[str, CoordinatorConnectionHandler] = {}
         self.connection_to_inbound_address: dict = {}
@@ -33,6 +36,7 @@ class Coordinator:
         self.witness_manager: WitnessManager = WitnessManager()
         self.num_shards: int = num_shards
         self.num_ready_nodes: int = 0
+        self.benchmarking_mode: bool = benchmarking_mode
 
     def run(self) -> None:
         self.open_socket()
@@ -115,6 +119,10 @@ class Coordinator:
 
             first_node_handler.send(f'get_proof|1ca6dd0091304ca9b985b615a4998eaa_0')
             second_node_handler.send(f'get_proof|3f1f607fdd6f485588c9ea7533c2c136_0')
+
+            if self.benchmarking_mode:
+                for handler in list(self.handlers.values()):
+                    handler.send('save_benchmarking_results')
 
         except KeyboardInterrupt:
             self.socket.close()

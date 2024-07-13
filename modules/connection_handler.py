@@ -286,6 +286,9 @@ class CoordinatorConnectionHandler(ConnectionHandler):
             elif tokens[0] == "get_proof":
                 witness_id: str = tokens[1]
                 self.initiating_node.generate_proof(witness_id)
+            # Coordinators triggers that benchmarking results are persisted.
+            elif tokens[0] == "save_benchmarking_results":
+                self.initiating_node.save_benchmarking_results()
 
     # Executes requests that NEED to be processed in byte form
     # (and not decoded to a string like in execute_request_str).

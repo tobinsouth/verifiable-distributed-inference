@@ -7,6 +7,7 @@ import uuid
 import json
 
 import numpy as np
+import pandas as pd
 import onnxruntime as ort
 from typing import Tuple
 from modules.connection_handler import CoordinatorConnectionHandler, WorkerConnectionHandler
@@ -27,10 +28,20 @@ PARAM_SCALE = None
 
 
 class Worker:
-    def __init__(self, address: Tuple[str, int], coordinator_address: Tuple[str, int], node_role: str):
+    def __init__(self,
+                 address: Tuple[str, int],
+                 coordinator_address: Tuple[str, int],
+                 node_role: str,
+                 benchmarking_mode: bool = False):
 
         self.shard_id: int = None
         self.model_id: str = None
+
+        # Switch to log/time results to be used for benchmarking results
+        self.benchmarking_mode: bool = benchmarking_mode
+        self.witness_time_data = []
+        self.proving_time_data = []
+        self.setup_time_data = []
 
         # Address other nodes use to connect to worker
         self.address: Tuple[str, int] = address
@@ -203,9 +214,27 @@ class Worker:
         conditional_print("[PREPROCESSING] Model (shard) successfully loaded", VERBOSE)
 
         conditional_print("[PREPROCESSING] Starting ezkl setup", VERBOSE)
+
+        # Starts measuring time
+        start_time: float = 0
+        if self.benchmarking_mode:
+            start_time = time.perf_counter()
+
         # Set up ezkl proof artefacts needed for future inference step(s).
         asyncio.run(self.prover.setup())
         # conditional_print("Skipping ezkl setup for now.", VERBOSE)
+
+        # Stops measuring time & logs time difference
+        end_time: float = 0
+        if self.benchmarking_mode:
+            end_time = time.perf_counter()
+            difference: float = end_time - start_time
+            self.proving_time_data.append(
+                {
+                    'shard_id': self.shard_id,
+                    'setup_time': difference
+                }
+            )
 
         conditional_print("[PREPROCESSING] ezkl setup completed", VERBOSE)
 
@@ -218,6 +247,11 @@ class Worker:
             None,
             {'input': input_array}
         )
+
+        # Starts measuring time
+        start_time: float = 0
+        if self.benchmarking_mode:
+            start_time = time.perf_counter()
 
         # The inference_run_counter, indicates in which inference "run" we currently are. Can later be used to
         # obtain proofs of all nodes in the chain for e.g. run 55.
@@ -241,6 +275,19 @@ class Worker:
         # Generate witness file using ezkl.gen_witness(). Pulls in raw witness file data based on witness_id.
         asyncio.run(self.prover.generate_witness(witness_id))
 
+        # Stops measuring time & logs time difference
+        end_time: float = 0
+        if self.benchmarking_mode:
+            end_time = time.perf_counter()
+            difference: float = end_time - start_time
+            self.witness_time_data.append(
+                {
+                    'witness_id': witness_id,
+                    'shard_id': self.shard_id,
+                    'witness_generation_time': difference
+                }
+            )
+
         # The output data gets formatted in a list, and the actual ndarray is at index 0.
         output_data = output[0]
         # Encode the output data (ndarray) as base64 bytes
@@ -259,9 +306,44 @@ class Worker:
 
     # Intermediate function that calls the prover to generate a proof.
     def generate_proof(self, witness_id: str) -> None:
+        # Starts measuring time
+        start_time: float = 0
+        if self.benchmarking_mode:
+            start_time = time.perf_counter()
+
+        # Trigger proof generation
         self.prover.generate_proof_for_witness(witness_id)
+
+        # Stops measuring time & logs time difference
+        end_time: float = 0
+        if self.benchmarking_mode:
+            end_time = time.perf_counter()
+            difference: float = end_time - start_time
+            self.proving_time_data.append(
+                {
+                    'witness_id': witness_id,
+                    'shard_id': self.shard_id,
+                    'proof_generation_time': difference
+                }
+            )
+
         proof_path: str = self.file_manager.get_proof_path(witness_id)
         self.coordinator_conn_handler.send(f'report_proof|{proof_path}')
+
+    # Persists logged benchmarking results
+    def save_benchmarking_results(self) -> None:
+        if not self.benchmarking_mode:
+            return
+
+        df_witness_times = pd.DataFrame(self.witness_time_data)
+        df_proving_times = pd.DataFrame(self.proving_time_data)
+        df_setup_times = pd.DataFrame(self.setup_time_data)
+
+        data_dir: str = self.file_manager.get_benchmarking_results_dir()
+
+        df_witness_times.to_csv(f'{data_dir}/{self.model_id}_{self.shard_id}_witness_times.csv')
+        df_proving_times.to_csv(f'{data_dir}/{self.model_id}_{self.shard_id}_proving_times.csv')
+        df_setup_times.to_csv(f'{data_dir}/{self.model_id}_{self.shard_id}_setup_times.csv')
 
 
 if __name__ == "__main__":
@@ -278,5 +360,7 @@ if __name__ == "__main__":
     node_role = ""
     if len(sys.argv) > 5:
         node_role = sys.argv[5]
+    # TODO: activate benchmarking mode
     worker = Worker(worker_address, coordinator_address, node_role)
+    # worker = Worker(worker_address, coordinator_address, node_role, True)
     worker.run()

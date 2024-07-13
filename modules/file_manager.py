@@ -3,6 +3,7 @@ import os
 MAIN_DIR = "./shared-storage"
 MODEL_SUB_DIR = "/shards"
 COORDINATOR_SUB_DIR = "/coordinator"
+BENCHMARKING_RESULTS_SUB_DIR = "/benchmark_results"
 
 
 # Class that streamlines the retrieval of proof-related artefacts.
@@ -101,3 +102,8 @@ class FileManager:
     def get_final_output_path(model_id: str, run_id: int) -> str:
         os.makedirs(f"{MAIN_DIR}{COORDINATOR_SUB_DIR}", exist_ok=True)
         return f'{MAIN_DIR}{COORDINATOR_SUB_DIR}/{model_id}_final_output_{run_id}.json'
+
+    # Returns the directory in which the benchmarking results are to be stored
+    def get_benchmarking_results_dir(self) -> str:
+        os.makedirs(f"{MAIN_DIR}{BENCHMARKING_RESULTS_SUB_DIR}", exist_ok=True)
+        return f"{MAIN_DIR}{BENCHMARKING_RESULTS_SUB_DIR}"
