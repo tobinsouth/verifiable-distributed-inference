@@ -6,17 +6,23 @@ import seaborn as sns
 def visualize_accuracy_plot(data_path: str):
     df = pd.read_csv(data_path)
 
-    nodes = [1, 2, 3, 4]
-    reference_accuracy = [100, 100, 100, 100]
-    goal_accuracy_actual_accuracy = [90, 80, 60, 50]
-    goal_resources_actual_accuracy = [85, 75, 55, 45]
-
     df_resources = df[df['ezkl_optimization_goal'] == 'resources']
     df_accuracy = df[df['ezkl_optimization_goal'] == 'accuracy']
 
     plt.figure(figsize=(9, 5))
-    #plt.scatter(df_resources['num_nodes'], df_resources['reference_accuracy_loss'], marker='o', color='orange', label='Reference')
-    plt.scatter(df_resources['num_nodes'], df_resources['accuracy_loss'], color='black', label='Actual (optimized for resources)')
+    plt.plot(
+        df_resources['num_nodes'],
+        df_resources['reference_accuracy_loss'],
+        marker='o',
+        color='orange',
+        label='Optimal'
+    )
+    plt.scatter(
+        df_resources['num_nodes'],
+        df_resources['accuracy_loss'],
+        color='black',
+        label='Actual (optimized for resources)'
+    )
     #plt.scatter(df['num nodes'], goal_resources_actual_accuracy, color='blue', label='Actual (optimized for accuracy)')
 
     plt.xlabel('No. of nodes/shards')
@@ -25,12 +31,43 @@ def visualize_accuracy_plot(data_path: str):
     plt.legend()
 
     #plt.yticks(df['accuracy_loss'])
-    plt.xticks(nodes)
+    plt.xticks(df_resources['num_nodes'])
     plt.grid(False)
 
     #plt.savefig('./plots/accuracy_plot.pdf', format='pdf')
     plt.show()
 
 
+def visualize_accuracy_plot_sns(data_path: str):
+    df = pd.read_csv(data_path)
+
+    sns.scatterplot(
+        data=df,
+        x='num_nodes',
+        y='accuracy_loss',
+        hue='ezkl_optimization_goal',
+        style='ezkl_optimization_goal',
+        s=120
+    )
+    # sns.lineplot(
+    #     data=df,
+    #     x='num_nodes',
+    #     y='reference_accuracy_loss',
+    #     c='grey'
+    # )
+
+    plt.xlabel('No. of nodes/shards', fontsize=10)
+    plt.ylabel('Cumulative RMSE Loss', fontsize=10)
+    plt.title('Accuracy Loss', fontsize=12)
+
+    plt.xticks(df['num_nodes'].unique())
+    plt.ylim(0, df['accuracy_loss'].max() + 0.00005)
+
+    plt.tight_layout()
+    # plt.savefig('./plots/accuracy_plot.pdf', format='pdf')
+    plt.show()
+
+
 if __name__ == '__main__':
-    visualize_accuracy_plot('./results/accuracy_benchmark.csv')
+    # visualize_accuracy_plot('./results/accuracy_benchmark.csv')
+    visualize_accuracy_plot_sns('./results/accuracy_benchmark_1720825443.772248.csv')

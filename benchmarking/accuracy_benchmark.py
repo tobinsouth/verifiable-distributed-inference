@@ -6,6 +6,7 @@ import asyncio
 import json
 import os
 import shutil
+import time
 
 import ezkl
 import numpy as np
@@ -20,6 +21,9 @@ DEVICE = "cpu"
 
 STORAGE_DIR = './tmp'
 RESULTS_DIR = './results'
+# Toggles whether CLI or Py bindings are used
+RUN_CLI = True
+
 
 def rmse(y_pred, y_true):
     y_pred = y_pred.astype(np.float32).flatten()
@@ -33,7 +37,6 @@ def rmspe(y_pred, y_true, epsilon = 1e-10) -> float:
 
     errors = (y_true - y_pred) / (y_true + epsilon)
     return np.sqrt(np.mean(np.square(errors)))
-
 
 
 async def setup(model_path: str,
@@ -50,49 +53,88 @@ async def setup(model_path: str,
     py_run_args.param_visibility = "hashed"
 
     # gen_settings
-    result_gen_settings = ezkl.gen_settings(
-        model=model_path,
-        output=settings_path,
-        py_run_args=py_run_args
-    )
+    if RUN_CLI:
+        os.system(f'ezkl gen-settings '
+                  f'-M {model_path} '
+                  f'-O {settings_path} '
+                  f'--input-visibility {py_run_args.input_visibility} '
+                  f'--output-visibility {py_run_args.output_visibility} '
+                  f'--param-visibility {py_run_args.param_visibility} ')
+    else:
+        result_gen_settings = ezkl.gen_settings(
+            model=model_path,
+            output=settings_path,
+            py_run_args=py_run_args
+        )
 
     # calibrate_settings
-    result_calibrate_settings = await ezkl.calibrate_settings(
-        data=calibration_data_path,
-        model=model_path,
-        settings=settings_path,
-        target=ezkl_optimization_goal
-    )
+    if RUN_CLI:
+        os.system(f'ezkl calibrate-settings '
+                  f'-D {calibration_data_path} '
+                  f'-M {model_path} '
+                  f'--settings-path {settings_path} '
+                  f'--target {ezkl_optimization_goal} ')
+    else:
+        result_calibrate_settings = await ezkl.calibrate_settings(
+            data=calibration_data_path,
+            model=model_path,
+            settings=settings_path,
+            target=ezkl_optimization_goal
+        )
 
     # compile_circuit
-    result_compile = ezkl.compile_circuit(
-        model=model_path,
-        compiled_circuit=compiled_model_path,
-        settings_path=settings_path
-    )
+    if RUN_CLI:
+        os.system(f'ezkl compile-circuit '
+                  f'--model {model_path} '
+                  f'--compiled-circuit {compiled_model_path} '
+                  f'--settings-path {settings_path}')
+    else:
+        result_compile = ezkl.compile_circuit(
+            model=model_path,
+            compiled_circuit=compiled_model_path,
+            settings_path=settings_path
+        )
 
     # get_srs
-    result_srs = await ezkl.get_srs(
-        settings_path=settings_path,
-        srs_path=srs_path
-    )
+    if RUN_CLI:
+        os.system(f'ezkl get-srs '
+                  f'--srs-path {srs_path} '
+                  f'--settings-path {settings_path} ')
+    else:
+        result_srs = await ezkl.get_srs(
+            settings_path=settings_path,
+            srs_path=srs_path
+        )
 
     # setup
-    result_setup = ezkl.setup(
-        model=compiled_model_path,
-        vk_path=vk_path,
-        pk_path=pk_path,
-        srs_path=srs_path
-    )
+    if RUN_CLI:
+        os.system(f'ezkl setup '
+                  f'--compiled-circuit {compiled_model_path} '
+                  f'--srs-path {srs_path} '
+                  f'--vk-path {vk_path} '
+                  f'--pk-path {pk_path} ')
+    else:
+        result_setup = ezkl.setup(
+            model=compiled_model_path,
+            vk_path=vk_path,
+            pk_path=pk_path,
+            srs_path=srs_path
+        )
 
 
 async def gen_witness(witness_path: str, raw_witness_path: str, compiled_model_path: str) -> None:
     # gen-witness
-    witness_result = await ezkl.gen_witness(
-        data=raw_witness_path,
-        model=compiled_model_path,
-        output=witness_path
-    )
+    if RUN_CLI:
+        os.system(f'ezkl gen-witness '
+                  f'-D {raw_witness_path} '
+                  f'-O {witness_path} '
+                  f'-M {compiled_model_path}')
+    else:
+        witness_result = await ezkl.gen_witness(
+            data=raw_witness_path,
+            model=compiled_model_path,
+            output=witness_path
+        )
 
 
 def run_benchmark(ezkl_optimization_goal: str, num_nodes: int) -> float:
@@ -202,12 +244,13 @@ def run_benchmark(ezkl_optimization_goal: str, num_nodes: int) -> float:
 
 if __name__ == '__main__':
     set_seed()
+    os.makedirs('./tmp', exist_ok = True)
 
     rows = []
-    # TODO: add 'accuracy' back in
-    for optimization_goal in ['resources']:
+    for optimization_goal in ['accuracy', 'resources']:
         # TODO: add 4 back in when model is adjusted
         for num_nodes in [1, 2, 3]:
+            print(f'Running config for: {optimization_goal} with {num_nodes} nodes')
             accuracy_loss = run_benchmark(optimization_goal, num_nodes)
             print(f'Completed benchmarking for: {optimization_goal} with {num_nodes} nodes -> {accuracy_loss}')
             row = {
@@ -220,6 +263,6 @@ if __name__ == '__main__':
             print(row)
 
     df = pd.DataFrame(rows)
-    df.to_csv(f'{RESULTS_DIR}/accuracy_benchmark.csv')
+    df.to_csv(f'{RESULTS_DIR}/accuracy_benchmark_{time.time()}.csv')
     print('Saved benchmarking results')
 
