@@ -53,7 +53,7 @@ class Worker:
         self.inbound_worker_conn_handler = None
         self.inbound_conn_worker_thread = None
 
-        # TODO: think of a smarter way of assigning nodes!
+        # Can take values FIRST, LAST, SOLO
         self.node_role: str = node_role
 
         self.model_runtime_session: ort.InferenceSession = None
@@ -67,8 +67,9 @@ class Worker:
 
     def run(self):
         try:
-            # Open socket to accept connection from previous worker
-            if not self.node_role == "FIRST":
+            # Open socket to accept connection from previous worker.
+            # First node / Solo node don't need to open a socket.
+            if not (self.node_role == 'FIRST' or self.node_role == 'SOLO'):
                 self.open_worker_socket()
 
             self.connect_to_coordinator()
@@ -84,60 +85,65 @@ class Worker:
             )
             self.conn_coordinator_thread.start()
 
-            # Report the address that a worker can accept connections from. Important for the previous worker
-            if not self.node_role == "FIRST":
-                self.coordinator_conn_handler.send(f"set_inbound_connection_address|{self.address[0]}|{self.address[1]}")
+            # Connecting to neighbouring nodes is only required when there's more than one node present.
+            if not self.node_role == "SOLO":
+                # Report the address that a worker can accept connections from. Important for the previous worker
+                if not self.node_role == "FIRST":
+                    self.coordinator_conn_handler.send(f"set_inbound_connection_address|{self.address[0]}|{self.address[1]}")
 
-            # The last node will not need to obtain and/or connect to another node.
-            # All other worker nodes should obtain the address of their subsequent node to connect to.
-            if not self.node_role == "LAST":
-                self.coordinator_conn_handler.send("get_subsequent_worker_address")
+                # The last node will not need to obtain and/or connect to another node.
+                # All other worker nodes should obtain the address of their subsequent node to connect to.
+                if not self.node_role == "LAST":
+                    self.coordinator_conn_handler.send("get_subsequent_worker_address")
 
-            if not self.node_role == "FIRST":
-                self.inbound_worker_socket, self.inbound_worker_address = self.inbound_worker_socket.accept()
-                self.inbound_worker_conn_handler = WorkerConnectionHandler(
-                    connection=self.inbound_worker_socket,
-                    address=self.inbound_worker_address,
-                    initiating_node=self
-                )
-                self.inbound_conn_worker_thread = threading.Thread(
-                    target=self.inbound_worker_conn_handler.run
-                )
-                self.inbound_conn_worker_thread.start()
-                conditional_print(f"[LOGIC] Accepted connection from {self.inbound_worker_address}", VERBOSE)
+                if not self.node_role == "FIRST":
+                    self.inbound_worker_socket, self.inbound_worker_address = self.inbound_worker_socket.accept()
+                    self.inbound_worker_conn_handler = WorkerConnectionHandler(
+                        connection=self.inbound_worker_socket,
+                        address=self.inbound_worker_address,
+                        initiating_node=self
+                    )
+                    self.inbound_conn_worker_thread = threading.Thread(
+                        target=self.inbound_worker_conn_handler.run
+                    )
+                    self.inbound_conn_worker_thread.start()
+                    conditional_print(f"[LOGIC] Accepted connection from {self.inbound_worker_address}", VERBOSE)
 
-            # The last node in the inference chain doesn't have a subsequent node to connect to.
-            if not self.node_role == "LAST":
-                # Spawn second thread to handle connection from worker to next worker (in the inference chain)
-                self.connect_to_worker()
-                self.outbound_worker_conn_handler = WorkerConnectionHandler(
-                    self.outbound_worker_socket,
-                    self.outbound_worker_address,
-                    initiating_node=self
-                )
-                self.outbound_conn_worker_thread = threading.Thread(
-                    target=self.outbound_worker_conn_handler.run
-                )
-                self.outbound_conn_worker_thread.start()
+                # The last node in the inference chain doesn't have a subsequent node to connect to.
+                if not self.node_role == "LAST":
+                    # Spawn second thread to handle connection from worker to next worker (in the inference chain)
+                    self.connect_to_worker()
+                    self.outbound_worker_conn_handler = WorkerConnectionHandler(
+                        self.outbound_worker_socket,
+                        self.outbound_worker_address,
+                        initiating_node=self
+                    )
+                    self.outbound_conn_worker_thread = threading.Thread(
+                        target=self.outbound_worker_conn_handler.run
+                    )
+                    self.outbound_conn_worker_thread.start()
 
-            conditional_print(f"[LOGIC] Connections between all nodes established.", VERBOSE)
+                conditional_print(f"[LOGIC] Connections between all nodes established.", VERBOSE)
             # ONLY after all connections have been created, do the ezkl setup!
             self.load_model()
             # Report to coordinator that ezkl setup has been completed
             self.coordinator_conn_handler.send("report_setup_complete")
 
         except KeyboardInterrupt:
-            self.coordinator_conn_handler.RUNNING = False
-            self.outbound_worker_conn_handler.RUNNING = False
-            self.inbound_worker_conn_handler.RUNNING = False
+            if self.coordinator_socket is not None:
+                self.coordinator_conn_handler.RUNNING = False
+                self.coordinator_socket.close()
+                self.conn_coordinator_thread.join()
 
-            self.coordinator_socket.close()
-            self.outbound_worker_socket.close()
-            self.inbound_worker_socket.close()
+            if self.outbound_worker_socket is not None:
+                self.outbound_worker_conn_handler.RUNNING = False
+                self.outbound_worker_socket.close()
+                self.outbound_conn_worker_thread.join()
 
-            self.conn_coordinator_thread.join()
-            self.outbound_conn_worker_thread.join()
-            self.inbound_conn_worker_thread.join()
+            if self.inbound_worker_socket is not None:
+                self.inbound_worker_conn_handler.RUNNING = False
+                self.inbound_worker_socket.close()
+                self.inbound_conn_worker_thread.join()
             sys.exit(0)
 
     def connect_to_coordinator(self):
@@ -239,8 +245,9 @@ class Worker:
         output_data = output[0]
         # Encode the output data (ndarray) as base64 bytes
         encoded_output_data: bytes = encode_np_array_to_b64(output_data)
-        # The last node send the final result to the coordinator.
-        if self.node_role == "LAST":
+
+        # The last node send the final result to the coordinator. Also applies when there's only one node.
+        if self.node_role == "LAST" or self.node_role == "SOLO":
             message: bytes = b'report_final_inference_output|' + self.inference_run_counter.to_bytes(8, byteorder='big') + b'|' + encoded_output_data
             self.coordinator_conn_handler.send_bytes(message)
         # All other nodes send their result to their neighbouring node (outbound_worker_connection).
@@ -261,8 +268,9 @@ if __name__ == "__main__":
     # Workers need to be started in order: FIRST ... ... ... LAST
     if len(sys.argv) != 6:
         print(f'Usage: worker.py <worker_host> <worker_port> <coordinator_host> <coordinator_port> [node_role]')
-        print('[node_role] has 2 options: FIRST or LAST. \n'
-              'One node has to identify as the first/last, the others don\'t')
+        print('[node_role] has 3 options: FIRST, LAST, or SOLO. \n'
+              '>1 node: One node has to identify as the FIRST/LAST, the others don\'t\n'
+              '=1 node: Node identifies as SOLO')
         sys.exit(0)
 
     worker_address = (sys.argv[1], int(sys.argv[2]))
