@@ -1,5 +1,5 @@
-torch
-torchvision
-ezkl
-onnxruntime
-transformers
+torch == 2.3.0
+torchvision == 0.18.0
+ezkl == 11.4.2
+onnxruntime == 1.18.0
+pandas == 2.2.2
