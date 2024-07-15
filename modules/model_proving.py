@@ -9,9 +9,11 @@ import json
 from modules.file_manager import FileManager
 from utils.helpers import conditional_print
 
-VERBOSE = True
-INPUT_SCALE = 13
-PARAM_SCALE = 13
+# Toggles
+# Enables verbose prints that log every step in the process
+VERBOSE: bool = True
+# Enables the use of ezkl's cli bindings instead of the python bindings
+USE_EZKL_CLI: bool = True
 
 
 class Prover:
@@ -77,23 +79,41 @@ class Prover:
         # Do not repeat settings steps, if they've been completed before. (calibrating settings takes a while!)
         if not os.path.isfile(self.file_manager.get_settings_path()):
             # Generate settings file
-            result_gen_settings = ezkl.gen_settings(
-                model=self.file_manager.get_model_path(),
-                output=self.file_manager.get_settings_path(),
-                py_run_args=self.py_run_args
-            )
-            if not result_gen_settings:
-                conditional_print(f"[ERROR] Unable to generate ezkl settings", VERBOSE)
+            if USE_EZKL_CLI:
+                return_code_gen_settings = os.system(f'ezkl gen-settings '
+                                                     f'-M {self.file_manager.get_model_path()} '
+                                                     f'-O {self.file_manager.get_settings_path()} '
+                                                     f'--input-visibility {self.py_run_args.input_visibility} '
+                                                     f'--output-visibility {self.py_run_args.output_visibility} '
+                                                     f'--param-visibility {self.py_run_args.param_visibility} ')
+                if return_code_gen_settings != 0:
+                    conditional_print(f"[ERROR] Unable to generate ezkl settings", VERBOSE)
 
-            # Calibrate settings file with data
-            result_calibrate_settings = await ezkl.calibrate_settings(
-                data=self.file_manager.get_calibration_data_path(),
-                model=self.file_manager.get_model_path(),
-                settings=self.file_manager.get_settings_path(),
-                target=self.ezkl_optimization_goal
-            )
-            if not result_calibrate_settings:
-                conditional_print(f"[ERROR] Unable to calibrate ezkl settings", VERBOSE)
+                return_code_calibrate_settings = os.system(f'ezkl calibrate-settings '
+                                                           f'-D {self.file_manager.get_calibration_data_path()} '
+                                                           f'-M {self.file_manager.get_model_path()} '
+                                                           f'--settings-path {self.file_manager.get_settings_path()} '
+                                                           f'--target {self.ezkl_optimization_goal} ')
+                if return_code_calibrate_settings != 0:
+                    conditional_print(f"[ERROR] Unable to calibrate ezkl settings", VERBOSE)
+            else:
+                result_gen_settings = ezkl.gen_settings(
+                    model=self.file_manager.get_model_path(),
+                    output=self.file_manager.get_settings_path(),
+                    py_run_args=self.py_run_args
+                )
+                if not result_gen_settings:
+                    conditional_print(f"[ERROR] Unable to generate ezkl settings", VERBOSE)
+
+                # Calibrate settings file with data
+                result_calibrate_settings = await ezkl.calibrate_settings(
+                    data=self.file_manager.get_calibration_data_path(),
+                    model=self.file_manager.get_model_path(),
+                    settings=self.file_manager.get_settings_path(),
+                    target=self.ezkl_optimization_goal
+                )
+                if not result_calibrate_settings:
+                    conditional_print(f"[ERROR] Unable to calibrate ezkl settings", VERBOSE)
         else:
             conditional_print(f"[PREPROCESSING] ezkl settings already generated and calibrated", VERBOSE)
 
@@ -101,35 +121,59 @@ class Prover:
         if not os.path.isfile(self.file_manager.get_compiled_circuit_path()):
             # Pre-compile model (shard) with ezkl.compile_circuit. This compiled circuit is later used to generate a
             # witness file for every input-output pair created during inference.
-            result_compile = ezkl.compile_circuit(
-                model=self.file_manager.get_model_path(),
-                compiled_circuit=self.file_manager.get_compiled_circuit_path(),
-                settings_path=self.file_manager.get_settings_path()
-            )
-            if not result_compile:
-                conditional_print(f"[ERROR] Unable to compile model to ezkl circuit", VERBOSE)
+            if USE_EZKL_CLI:
+                return_code_compile_circuit = os.system(f'ezkl compile-circuit '
+                                                        f'--model {self.file_manager.get_model_path()} '
+                                                        f'--compiled-circuit {self.file_manager.get_compiled_circuit_path()} '
+                                                        f'--settings-path {self.file_manager.get_settings_path()}')
+                if return_code_compile_circuit != 0:
+                    conditional_print(f"[ERROR] Unable to compile model to ezkl circuit", VERBOSE)
+            else:
+                result_compile = ezkl.compile_circuit(
+                    model=self.file_manager.get_model_path(),
+                    compiled_circuit=self.file_manager.get_compiled_circuit_path(),
+                    settings_path=self.file_manager.get_settings_path()
+                )
+                if not result_compile:
+                    conditional_print(f"[ERROR] Unable to compile model to ezkl circuit", VERBOSE)
         else:
             conditional_print(f"[PREPROCESSING] ezkl circuit already compiled", VERBOSE)
 
         # Do not fetch the srs, if it has been pulled in already (downloading takes a while!)
         if not os.path.isfile(self.file_manager.get_srs_path()):
-            result_srs = await ezkl.get_srs(
-                settings_path=self.file_manager.get_settings_path(),
-                srs_path=self.file_manager.get_srs_path()
-            )
-            if not result_srs:
-                conditional_print(f"[ERROR] Unable to get SRS", VERBOSE)
+            if USE_EZKL_CLI:
+                return_code_srs = os.system(f'ezkl get-srs '
+                                            f'--settings-path {self.file_manager.get_settings_path()} '
+                                            f'--srs-path {self.file_manager.get_srs_path()}')
+                if return_code_srs != 0:
+                    conditional_print(f"[ERROR] Unable to get SRS", VERBOSE)
+            else:
+                result_srs = await ezkl.get_srs(
+                    settings_path=self.file_manager.get_settings_path(),
+                    srs_path=self.file_manager.get_srs_path()
+                )
+                if not result_srs:
+                    conditional_print(f"[ERROR] Unable to get SRS", VERBOSE)
         else:
             conditional_print(f"[PREPROCESSING] ezkl SRS already downloaded", VERBOSE)
 
-        result_setup = ezkl.setup(
-            model=self.file_manager.get_compiled_circuit_path(),
-            vk_path=self.file_manager.get_vk_path(),
-            pk_path=self.file_manager.get_pk_path(),
-            srs_path=self.file_manager.get_srs_path()
-        )
-        if not result_setup:
-            conditional_print(f"[ERROR] Unable to complete final ezkl setup", VERBOSE)
+        if USE_EZKL_CLI:
+            return_code_setup = os.system(f'ezkl setup '
+                                          f'--compiled-circuit {self.file_manager.get_compiled_circuit_path()} '
+                                          f'--vk-path {self.file_manager.get_vk_path()} '
+                                          f'--pk-path {self.file_manager.get_pk_path()} '
+                                          f'--srs-path {self.file_manager.get_srs_path()} ')
+            if return_code_setup != 0:
+                conditional_print(f"[ERROR] Unable to complete final ezkl setup", VERBOSE)
+        else:
+            result_setup = ezkl.setup(
+                model=self.file_manager.get_compiled_circuit_path(),
+                vk_path=self.file_manager.get_vk_path(),
+                pk_path=self.file_manager.get_pk_path(),
+                srs_path=self.file_manager.get_srs_path()
+            )
+            if not result_setup:
+                conditional_print(f"[ERROR] Unable to complete final ezkl setup", VERBOSE)
 
     # Generate witness file
     async def generate_witness(self, witness_id: str) -> None:
@@ -143,46 +187,85 @@ class Prover:
 
         # Fetch real witness data path
         witness_path: str = self.file_manager.get_witness_path(witness_id)
-        witness_result = await ezkl.gen_witness(
-            data=raw_witness_path,
-            model=self.file_manager.get_compiled_circuit_path(),
-            output=witness_path
-        )
-        file_exists: bool = os.path.isfile(witness_path)
-        if not witness_result or not file_exists:
-            conditional_print(f"[ERROR] Unable to generate ezkl witness at {witness_path}", VERBOSE)
+        if USE_EZKL_CLI:
+            return_code_witness = os.system(f'ezkl gen-witness '
+                                            f'-D {raw_witness_path} '
+                                            f'-M {self.file_manager.get_compiled_circuit_path()}'
+                                            f'-O {witness_path} ')
+            file_exists: bool = os.path.isfile(witness_path)
+            if (return_code_witness != 0) or not file_exists:
+                conditional_print(f"[ERROR] Unable to generate ezkl witness at {witness_path}", VERBOSE)
+            else:
+                conditional_print(f'[LOGIC] Witness successfully generated at {witness_path}', VERBOSE)
         else:
-            conditional_print(f'[LOGIC] Witness successfully generated at {witness_path}', VERBOSE)
+            witness_result = await ezkl.gen_witness(
+                data=raw_witness_path,
+                model=self.file_manager.get_compiled_circuit_path(),
+                output=witness_path
+            )
+            file_exists: bool = os.path.isfile(witness_path)
+            if not witness_result or not file_exists:
+                conditional_print(f"[ERROR] Unable to generate ezkl witness at {witness_path}", VERBOSE)
+            else:
+                conditional_print(f'[LOGIC] Witness successfully generated at {witness_path}', VERBOSE)
 
     # Generates ezkl proof given a previously generated witness file, compiled circuit, etc.
     def generate_proof_for_witness(self, witness_id: str) -> None:
         proof_path: str = self.file_manager.get_proof_path(witness_id)
-        prove_result: bool = ezkl.prove(
-            witness=self.file_manager.get_witness_path(witness_id),
-            model=self.file_manager.get_compiled_circuit_path(),
-            pk_path=self.file_manager.get_pk_path(),
-            proof_path=proof_path,
-            srs_path=self.file_manager.get_srs_path()
-        )
-        file_exists: bool = os.path.isfile(proof_path)
-        if not prove_result or not file_exists:
-            conditional_print(f"[ERROR] Unable to generate ezkl proof for witness {witness_id} at {proof_path}", VERBOSE)
+        if USE_EZKL_CLI:
+            return_code_prove = os.system(f'ezkl prove '
+                                          f'--witness {self.file_manager.get_witness_path(witness_id)}'
+                                          f'--compiled-circuit {self.file_manager.get_compiled_circuit_path()}'
+                                          f'--pk-path {self.file_manager.get_pk_path()}'
+                                          f'--proof-path {proof_path}'
+                                          f'--srs-path {self.file_manager.get_srs_path()}')
+            file_exists: bool = os.path.isfile(proof_path)
+            if (return_code_prove != 0) or not file_exists:
+                conditional_print(f"[ERROR] Unable to generate ezkl proof for witness {witness_id} at {proof_path}",
+                                  VERBOSE)
+            else:
+                conditional_print(f'[LOGIC] Proof successfully generated at {proof_path}', VERBOSE)
         else:
-            conditional_print(f'[LOGIC] Proof successfully generated at {proof_path}', VERBOSE)
+            prove_result: bool = ezkl.prove(
+                witness=self.file_manager.get_witness_path(witness_id),
+                model=self.file_manager.get_compiled_circuit_path(),
+                pk_path=self.file_manager.get_pk_path(),
+                proof_path=proof_path,
+                srs_path=self.file_manager.get_srs_path()
+            )
+            file_exists: bool = os.path.isfile(proof_path)
+            if not prove_result or not file_exists:
+                conditional_print(f"[ERROR] Unable to generate ezkl proof for witness {witness_id} at {proof_path}",
+                                  VERBOSE)
+            else:
+                conditional_print(f'[LOGIC] Proof successfully generated at {proof_path}', VERBOSE)
 
     # Verifies ezkl proof.
     @staticmethod
     def verify_proof(proof_path: str, settings_path: str, vk_path: str) -> None:
+        # TODO: check if srs path needs to be passed!!!
+        # cli prints say this: --srs-path <SRS_PATH>            The path to SRS, if None will use $EZKL_REPO_PATH/srs/kzg{logrows}.srs
+
         # Verify proof
-        res = ezkl.verify(
-            proof_path=proof_path,
-            settings_path=settings_path,
-            vk_path=vk_path
-        )
-        if not res:
-            conditional_print(f'Proof at {proof_path} NOT valid', VERBOSE)
+        if USE_EZKL_CLI:
+            return_code_verify = os.system(f'ezkl verify '
+                                           f'--proof-path {proof_path}'
+                                           f'--settings-path {settings_path}'
+                                           f'--vk-path {vk_path}')
+            if return_code_verify != 0:
+                conditional_print(f'Proof at {proof_path} NOT valid', VERBOSE)
+            else:
+                conditional_print(f'Proof at {proof_path} valid', VERBOSE)
         else:
-            conditional_print(f'Proof at {proof_path} valid', VERBOSE)
+            res = ezkl.verify(
+                proof_path=proof_path,
+                settings_path=settings_path,
+                vk_path=vk_path
+            )
+            if not res:
+                conditional_print(f'Proof at {proof_path} NOT valid', VERBOSE)
+            else:
+                conditional_print(f'Proof at {proof_path} valid', VERBOSE)
 
     """ OUTDATED CODE:
     def old_generate_proof(self, shard_id: int = None, previous_shard_output=None):
