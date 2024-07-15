@@ -5,6 +5,7 @@
 import asyncio
 import json
 import os
+import sys
 import shutil
 import time
 
@@ -12,6 +13,10 @@ import ezkl
 import numpy as np
 import pandas as pd
 import torch
+
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 from modules.model_processing import Processor
 from modules.model_training import Trainer
@@ -31,7 +36,7 @@ def rmse(y_pred, y_true):
     return np.sqrt(np.mean(np.square(y_true - y_pred)))
 
 
-def rmspe(y_pred, y_true, epsilon = 1e-10) -> float:
+def rmspe(y_pred, y_true, epsilon=1e-10) -> float:
     y_pred = y_pred.astype(np.float32).flatten()
     y_true = y_true.astype(np.float32).flatten()
 
@@ -244,7 +249,7 @@ def run_benchmark(ezkl_optimization_goal: str, num_nodes: int) -> float:
 
 if __name__ == '__main__':
     set_seed()
-    os.makedirs('./tmp', exist_ok = True)
+    os.makedirs('./tmp', exist_ok=True)
 
     rows = []
     for optimization_goal in ['accuracy', 'resources']:
@@ -265,4 +270,3 @@ if __name__ == '__main__':
     df = pd.DataFrame(rows)
     df.to_csv(f'{RESULTS_DIR}/accuracy_benchmark_{time.time()}.csv')
     print('Saved benchmarking results')
-
