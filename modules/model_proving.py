@@ -13,7 +13,7 @@ from utils.helpers import conditional_print
 # Enables verbose prints that log every step in the process
 VERBOSE: bool = True
 # Enables the use of ezkl's cli bindings instead of the python bindings
-USE_EZKL_CLI: bool = True
+USE_EZKL_CLI: bool = False
 
 
 class Prover:

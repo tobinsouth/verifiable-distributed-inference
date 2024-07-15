@@ -22,7 +22,7 @@ DEVICE = "cpu"
 STORAGE_DIR = './tmp'
 RESULTS_DIR = './results'
 # Toggles whether CLI or Py bindings are used
-RUN_CLI = True
+USE_EZKL_CLI = False
 
 
 def rmse(y_pred, y_true):
@@ -53,7 +53,7 @@ async def setup(model_path: str,
     py_run_args.param_visibility = "hashed"
 
     # gen_settings
-    if RUN_CLI:
+    if USE_EZKL_CLI:
         os.system(f'ezkl gen-settings '
                   f'-M {model_path} '
                   f'-O {settings_path} '
@@ -68,7 +68,7 @@ async def setup(model_path: str,
         )
 
     # calibrate_settings
-    if RUN_CLI:
+    if USE_EZKL_CLI:
         os.system(f'ezkl calibrate-settings '
                   f'-D {calibration_data_path} '
                   f'-M {model_path} '
@@ -83,7 +83,7 @@ async def setup(model_path: str,
         )
 
     # compile_circuit
-    if RUN_CLI:
+    if USE_EZKL_CLI:
         os.system(f'ezkl compile-circuit '
                   f'--model {model_path} '
                   f'--compiled-circuit {compiled_model_path} '
@@ -96,7 +96,7 @@ async def setup(model_path: str,
         )
 
     # get_srs
-    if RUN_CLI:
+    if USE_EZKL_CLI:
         os.system(f'ezkl get-srs '
                   f'--srs-path {srs_path} '
                   f'--settings-path {settings_path} ')
@@ -107,7 +107,7 @@ async def setup(model_path: str,
         )
 
     # setup
-    if RUN_CLI:
+    if USE_EZKL_CLI:
         os.system(f'ezkl setup '
                   f'--compiled-circuit {compiled_model_path} '
                   f'--srs-path {srs_path} '
@@ -124,7 +124,7 @@ async def setup(model_path: str,
 
 async def gen_witness(witness_path: str, raw_witness_path: str, compiled_model_path: str) -> None:
     # gen-witness
-    if RUN_CLI:
+    if USE_EZKL_CLI:
         os.system(f'ezkl gen-witness '
                   f'-D {raw_witness_path} '
                   f'-O {witness_path} '
