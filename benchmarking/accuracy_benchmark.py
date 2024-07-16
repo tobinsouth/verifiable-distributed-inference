@@ -252,7 +252,7 @@ if __name__ == '__main__':
     os.makedirs('./tmp', exist_ok=True)
 
     rows = []
-    for optimization_goal in ['accuracy', 'resources']:
+    for optimization_goal in ['resources']:
         # TODO: add 4 back in when model is adjusted
         for num_nodes in [1, 2, 3]:
             print(f'Running config for: {optimization_goal} with {num_nodes} nodes')
