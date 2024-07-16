@@ -249,10 +249,11 @@ def run_benchmark(ezkl_optimization_goal: str, num_nodes: int) -> float:
 
 if __name__ == '__main__':
     set_seed()
-    os.makedirs('./tmp', exist_ok=True)
+    os.makedirs(STORAGE_DIR, exist_ok=True)
+    os.makedirs(RESULTS_DIR, exist_ok=True)
 
     rows = []
-    for optimization_goal in ['resources']:
+    for optimization_goal in ['resources', 'accuracy']:
         # TODO: add 4 back in when model is adjusted
         for num_nodes in [1, 2, 3]:
             print(f'Running config for: {optimization_goal} with {num_nodes} nodes')
