@@ -20,7 +20,7 @@ VERBOSE = False
 # TODO: Find optimimal set of models (NEEDS to have 12 layers, so sharding works out nicely)
 
 # Define Model
-class Model(nn.Module):
+class Model1(nn.Module):
     def __init__(self):
         super().__init__()
         self.flatten = nn.Flatten()
@@ -28,7 +28,13 @@ class Model(nn.Module):
         self.relu1 = nn.ReLU()
         self.linear2 = nn.Linear(10, 10)
         self.relu2 = nn.ReLU()
-        self.linear3 = nn.Linear(10, 1)
+        self.linear3 = nn.Linear(10, 10)
+        self.relu3 = nn.ReLU()
+        self.linear4 = nn.Linear(10, 10)
+        self.relu4 = nn.ReLU()
+        self.linear5 = nn.Linear(10, 10)
+        self.relu5 = nn.ReLU()
+        self.linear6 = nn.Linear(10, 1)
 
     def forward(self, x):
         x = self.flatten(x)
@@ -37,6 +43,12 @@ class Model(nn.Module):
         x = self.linear2(x)
         x = self.relu2(x)
         x = self.linear3(x)
+        x = self.relu3(x)
+        x = self.linear4(x)
+        x = self.relu4(x)
+        x = self.linear5(x)
+        x = self.relu5(x)
+        x = self.linear6(x)
         return x
 
 
@@ -55,7 +67,7 @@ class Trainer:
 
     def __init__(self,
                  load_training_data: bool = True):
-        self.model = Model().to(DEVICE)
+        self.model = Model1().to(DEVICE)
         self.loss_fn = nn.CrossEntropyLoss()
         self.optimizer = torch.optim.SGD(self.model.parameters(), lr=1e-3)
         self.train_dataloader = None
