@@ -253,9 +253,9 @@ if __name__ == '__main__':
     os.makedirs(RESULTS_DIR, exist_ok=True)
 
     rows = []
-    for optimization_goal in ['resources', 'accuracy']:
+    for optimization_goal in ['accuracy', 'resources']:
         # TODO: add 4 back in when model is adjusted
-        for num_nodes in [1, 2, 3]:
+        for num_nodes in [1, 2, 3, 4]:
             print(f'Running config for: {optimization_goal} with {num_nodes} nodes')
             accuracy_loss = run_benchmark(optimization_goal, num_nodes)
             print(f'Completed benchmarking for: {optimization_goal} with {num_nodes} nodes -> {accuracy_loss}')
