@@ -28,7 +28,7 @@ DEVICE = "cpu"
 STORAGE_DIR = './tmp'
 RESULTS_DIR = './results'
 # Toggles whether CLI or Py bindings are used
-USE_EZKL_CLI = False
+USE_EZKL_CLI = True
 
 
 def rmse(y_pred, y_true):
@@ -265,7 +265,7 @@ if __name__ == '__main__':
     os.makedirs(RESULTS_DIR, exist_ok=True)
 
     rows = []
-    for optimization_goal in ['accuracy', 'resources']:
+    for optimization_goal in ['resources', 'accuracy']:
         for num_nodes in [1, 2, 3, 4, 6, 12]:
             print(f'Running config for: Model {model_name} with {optimization_goal} goal and {num_nodes} nodes')
             accuracy_loss = run_benchmark(optimization_goal, num_nodes, model_name)
