@@ -36,6 +36,8 @@ class Model1(nn.Module):
         self.relu5 = nn.ReLU()
         self.linear6 = nn.Linear(10, 1)
 
+        self.name = 'linear_relu'
+
     def forward(self, x):
         x = self.flatten(x)
         x = self.linear1(x)

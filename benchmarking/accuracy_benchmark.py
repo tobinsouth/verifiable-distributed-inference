@@ -8,6 +8,7 @@ import os
 import sys
 import shutil
 import time
+from typing import Tuple
 
 import ezkl
 import numpy as np
@@ -142,7 +143,7 @@ async def gen_witness(witness_path: str, raw_witness_path: str, compiled_model_p
         )
 
 
-def run_benchmark(ezkl_optimization_goal: str, num_nodes: int) -> float:
+def run_benchmark(ezkl_optimization_goal: str, num_nodes: int) -> tuple[float, str]:
     model_id: str = 'model'
     # clear out storage dir
     shutil.rmtree(STORAGE_DIR)
@@ -244,7 +245,7 @@ def run_benchmark(ezkl_optimization_goal: str, num_nodes: int) -> float:
         # Update tensor for following shard
         prev_output = tensor_output
 
-    return total_loss
+    return total_loss, trainer.model.name
 
 
 if __name__ == '__main__':
@@ -253,17 +254,18 @@ if __name__ == '__main__':
     os.makedirs(RESULTS_DIR, exist_ok=True)
 
     rows = []
-    for optimization_goal in ['resources']:
+    for optimization_goal in ['accuracy']:
         # TODO: add 4 back in when model is adjusted
-        for num_nodes in [1, 2, 3, 4, 6, 12]:
+        for num_nodes in [1]:
             print(f'Running config for: {optimization_goal} with {num_nodes} nodes')
-            accuracy_loss = run_benchmark(optimization_goal, num_nodes)
+            accuracy_loss, model_name = run_benchmark(optimization_goal, num_nodes)
             print(f'Completed benchmarking for: {optimization_goal} with {num_nodes} nodes -> {accuracy_loss}')
             row = {
                 'ezkl_optimization_goal': optimization_goal,
                 'num_nodes': num_nodes,
                 'accuracy_loss': accuracy_loss,
                 'reference_accuracy_loss': 0,  # Reference value for the 'ideal' loss value
+                'model': model_name
             }
             rows.append(row)
             print(row)
