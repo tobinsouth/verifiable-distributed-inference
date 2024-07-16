@@ -20,7 +20,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 from modules.model_processing import Processor
-from modules.model_training import Trainer
+from modules.model_training import Trainer, AVAILABLE_MODELS
 from modules.seed import set_seed
 
 DEVICE = "cpu"
@@ -143,7 +143,7 @@ async def gen_witness(witness_path: str, raw_witness_path: str, compiled_model_p
         )
 
 
-def run_benchmark(ezkl_optimization_goal: str, num_nodes: int) -> tuple[float, str]:
+def run_benchmark(ezkl_optimization_goal: str, num_nodes: int, model_name: str) -> tuple[float, str]:
     model_id: str = 'model'
     # clear out storage dir
     shutil.rmtree(STORAGE_DIR)
@@ -151,7 +151,8 @@ def run_benchmark(ezkl_optimization_goal: str, num_nodes: int) -> tuple[float, s
 
     # Setup trainer
     trainer = Trainer(
-        load_training_data=False
+        load_training_data=False,
+        model_name=model_name
     )
 
     # Setup processor
@@ -238,17 +239,27 @@ def run_benchmark(ezkl_optimization_goal: str, num_nodes: int) -> tuple[float, s
 
         # compare output and target
         loss: float = rmse(output, target)
-        print(f'!!!!!RMSE: {rmse(output, target)}, RMSPE: {rmspe(output, target)}')
+        print(f'Shard results: RMSE: {rmse(output, target)}, RMSPE: {rmspe(output, target)}')
         # add to loss, as we're calculating the cumulative loss
         total_loss += loss
 
         # Update tensor for following shard
         prev_output = tensor_output
 
-    return total_loss, trainer.model.name
+    return total_loss
 
 
 if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        print("Invalid usage!")
+        print(f'Usage: accuracy_benchmark <model>')
+        print(f'Available models are: {", ".join(AVAILABLE_MODELS)}')
+        sys.exit(1)
+
+    model_name: str = sys.argv[1]
+    if model_name not in AVAILABLE_MODELS:
+        print(f'Incorrect model value! Available models are: {AVAILABLE_MODELS.join(",")}')
+        sys.exit(1)
     set_seed()
     os.makedirs(STORAGE_DIR, exist_ok=True)
     os.makedirs(RESULTS_DIR, exist_ok=True)
@@ -256,8 +267,8 @@ if __name__ == '__main__':
     rows = []
     for optimization_goal in ['accuracy', 'resources']:
         for num_nodes in [1, 2, 3, 4, 6, 12]:
-            print(f'Running config for: {optimization_goal} with {num_nodes} nodes')
-            accuracy_loss, model_name = run_benchmark(optimization_goal, num_nodes)
+            print(f'Running config for: Model {model_name} with {optimization_goal} goal and {num_nodes} nodes')
+            accuracy_loss = run_benchmark(optimization_goal, num_nodes, model_name)
             print(f'Completed benchmarking for: {optimization_goal} with {num_nodes} nodes -> {accuracy_loss}')
             row = {
                 'ezkl_optimization_goal': optimization_goal,

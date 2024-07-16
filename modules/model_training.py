@@ -19,8 +19,26 @@ VERBOSE = False
 
 # TODO: Find optimimal set of models (NEEDS to have 12 layers, so sharding works out nicely)
 
-# Define Model
-class Model1(nn.Module):
+
+# Define Models
+class LinearReluModel(nn.Module):
+    name = 'linear_relu'
+
+    model_dimensions = [
+        (1, 1, 5, 5),
+        (1, 25),
+        (1, 10),
+        (1, 10),
+        (1, 10),
+        (1, 10),
+        (1, 10),
+        (1, 10),
+        (1, 10),
+        (1, 10),
+        (1, 10),
+        (1, 10)
+    ]
+
     def __init__(self):
         super().__init__()
         self.flatten = nn.Flatten()
@@ -35,8 +53,6 @@ class Model1(nn.Module):
         self.linear5 = nn.Linear(10, 10)
         self.relu5 = nn.ReLU()
         self.linear6 = nn.Linear(10, 1)
-
-        self.name = 'linear_relu'
 
     def forward(self, x):
         x = self.flatten(x)
@@ -54,28 +70,59 @@ class Model1(nn.Module):
         return x
 
 
-# Update this with model definition above.
-MODEL_DIMENSIONS = [
-    (1, 1, 5, 5),
-    (1, 25),
-    (1, 10),
-    (1, 10),
-    (1, 10),
-    (1, 10),
-    (1, 10),
-    (1, 10),
-    (1, 10),
-    (1, 10),
-    (1, 10),
-    (1, 10)
+class CNNModel(nn.Module):
+    name = 'cnn'
+
+    model_dimensions = [
+
+    ]
+
+    def __init__(self):
+        super().__init__()
+        # TODO: define layers
+
+    def forward(self, x):
+        # TODO: pass through defined layers
+        return x
+
+
+class AttentionModel(nn.Module):
+    name = 'attention'
+
+    model_dimensions = [
+
+    ]
+
+    def __init__(self):
+        super().__init__()
+        # TODO: define layers
+
+    def forward(self, x):
+        # TODO: pass through defined layers
+        return x
+
+
+AVAILABLE_MODELS = [
+    LinearReluModel.name,
+    CNNModel.name,
+    AttentionModel.name
 ]
 
 
 class Trainer:
 
     def __init__(self,
-                 load_training_data: bool = True):
-        self.model = Model1().to(DEVICE)
+                 load_training_data: bool = True,
+                 model_name: str = ""):
+        # check if there's a specific model that should be used
+        if model_name == LinearReluModel.name:
+            self.model = LinearReluModel().to(DEVICE)
+        elif model_name == CNNModel.name:
+            self.model = CNNModel().to(DEVICE)
+        elif model_name == AttentionModel.name:
+            self.model = AttentionModel().to(DEVICE)
+        else:
+            self.model = LinearReluModel().to(DEVICE)
         self.loss_fn = nn.CrossEntropyLoss()
         self.optimizer = torch.optim.SGD(self.model.parameters(), lr=1e-3)
         self.train_dataloader = None
@@ -148,5 +195,3 @@ class Trainer:
     def get_dummy_input() -> torch.Tensor:
         # return torch.randn(1, 1, 28, 28).to(DEVICE)
         return torch.randn(1, 1, 5, 5).to(DEVICE)
-
-

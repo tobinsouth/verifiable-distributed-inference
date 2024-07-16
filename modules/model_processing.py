@@ -4,7 +4,6 @@ import os
 from torch import nn
 import torch
 from utils.helpers import conditional_print
-from modules.model_training import MODEL_DIMENSIONS
 
 VERBOSE = True
 
@@ -26,7 +25,7 @@ class Processor:
     def shard(self, num_shards: int) -> None:
         if num_shards <= 1:
             self.shards.append(self.model)
-            self.shard_dimensions.append(MODEL_DIMENSIONS[0])
+            self.shard_dimensions.append(self.model.model_dimensions[0])
             return
         children_list: list = list(self.model.children())
         num_layers: int = len(children_list)
@@ -38,7 +37,7 @@ class Processor:
             self.shards.append(
                 nn.Sequential(*children_list[i:i + group_size])
             )
-            self.shard_dimensions.append(MODEL_DIMENSIONS[i])
+            self.shard_dimensions.append(self.model.model_dimensions[i])
         conditional_print(f'[PREPROCESSING] Split model into {len(self.shards)} shards.', VERBOSE)
 
     # Saves Model / Model Shards.
