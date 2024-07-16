@@ -280,6 +280,8 @@ if __name__ == '__main__':
             rows.append(row)
             print(row)
 
-    df = pd.DataFrame(rows)
-    df.to_csv(f'{RESULTS_DIR}/accuracy_benchmark_{time.time()}.csv')
-    print('Saved benchmarking results')
+        df = pd.DataFrame(rows)
+        df.to_csv(f'{RESULTS_DIR}/accuracy_benchmark_{optimization_goal}_{time.time_ns()}.csv')
+        rows = []
+        print(f'Saved {optimization_goal} benchmarking results')
+    print('Saved ALL benchmarking results')
