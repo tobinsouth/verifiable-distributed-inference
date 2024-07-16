@@ -3,3 +3,9 @@ torchvision == 0.18.0
 ezkl == 11.4.2
 onnxruntime == 1.18.0
 pandas == 2.2.2
+onnx == 1.16.1
+onnxruntime == 1.18.0
+
+# For visualization
+matplotlib == 3.9.1
+seaborn == 0.13.2
