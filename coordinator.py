@@ -108,19 +108,22 @@ class Coordinator:
                 time.sleep(5)
 
             print('[LOGIC] Setup completed. Inference runs can now be served.')
-            first_node_handler: CoordinatorConnectionHandler = list(self.handlers.values())[0]
-            second_node_handler: CoordinatorConnectionHandler = list(self.handlers.values())[1]
-            np_arr = Trainer.get_dummy_input().cpu().numpy()
-            encoded_np_arr = encode_np_array_to_b64(np_arr)
-            message: bytes = b'run_inference|' + encoded_np_arr
-            first_node_handler.send_bytes(message)
-
-            time.sleep(10)
-
-            first_node_handler.send(f'get_proof|1ca6dd0091304ca9b985b615a4998eaa_0')
-            second_node_handler.send(f'get_proof|3f1f607fdd6f485588c9ea7533c2c136_0')
 
             if self.benchmarking_mode:
+                # The first node will receive all inference requests from the coordinator
+                first_node_handler: CoordinatorConnectionHandler = list(self.handlers.values())[0]
+
+                # second_node_handler: CoordinatorConnectionHandler = list(self.handlers.values())[1]
+                np_arr = Trainer.get_dummy_input().cpu().numpy()
+                encoded_np_arr = encode_np_array_to_b64(np_arr)
+                message: bytes = b'run_inference|' + encoded_np_arr
+                first_node_handler.send_bytes(message)
+
+                time.sleep(10)
+
+                first_node_handler.send(f'get_proof|1ca6dd0091304ca9b985b615a4998eaa_0')
+
+                # Triggers all
                 for handler in list(self.handlers.values()):
                     handler.send('save_benchmarking_results')
 
