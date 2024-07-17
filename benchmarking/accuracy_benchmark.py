@@ -268,8 +268,6 @@ if __name__ == '__main__':
     os.makedirs(STORAGE_DIR, exist_ok=True)
     os.makedirs(RESULTS_DIR, exist_ok=True)
 
-    sys.exit(0)
-
     rows = []
     # There's an option here to add 'accuracy' as optimization goal. Runtimes increase DRASTICALLY.
     for optimization_goal in ['resources']:
