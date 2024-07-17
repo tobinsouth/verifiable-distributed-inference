@@ -143,7 +143,7 @@ async def gen_witness(witness_path: str, raw_witness_path: str, compiled_model_p
         )
 
 
-def run_benchmark(ezkl_optimization_goal: str, num_nodes: int, model_name: str) -> tuple[float, str]:
+def run_benchmark(ezkl_optimization_goal: str, num_nodes: int, model_name: str) -> float:
     model_id: str = 'model'
     # clear out storage dir
     shutil.rmtree(STORAGE_DIR)
@@ -154,11 +154,11 @@ def run_benchmark(ezkl_optimization_goal: str, num_nodes: int, model_name: str) 
         load_training_data=False,
         model_name=model_name
     )
-
+    model = trainer.model
     # Setup processor
     processor: Processor = Processor(
-        model=trainer.model,
-        sample_input=torch.randn(1, 1, 5, 5).to(DEVICE)
+        model=model,
+        sample_input=torch.randn(*model.model_dimensions[0]).to(DEVICE)
     )
     # Shard model into `num_nodes` shards
     processor.shard(num_nodes)
@@ -265,6 +265,7 @@ if __name__ == '__main__':
     os.makedirs(RESULTS_DIR, exist_ok=True)
 
     rows = []
+    # There's an option here to add 'accuracy' as optimization goal. Runtimes increase DRASTICALLY.
     for optimization_goal in ['resources']:
         for num_nodes in [1, 2, 3, 4, 6, 12]:
             print(f'Running config for: Model {model_name} with {optimization_goal} goal and {num_nodes} nodes')
