@@ -45,8 +45,8 @@ def visualize_accuracy_plot_sns(data_path: str):
         data=df,
         x='num_nodes',
         y='accuracy_loss',
-        hue='ezkl_optimization_goal',
-        style='ezkl_optimization_goal',
+        # hue='ezkl_optimization_goal',
+        style='model',
         s=120
     )
     # sns.lineplot(
@@ -65,9 +65,10 @@ def visualize_accuracy_plot_sns(data_path: str):
 
     plt.tight_layout()
     # plt.savefig('./plots/accuracy_plot.pdf', format='pdf')
+    # plt.savefig('./plots/accuracy_plot.png', format='png')
     plt.show()
 
 
 if __name__ == '__main__':
     # visualize_accuracy_plot('./results/accuracy_benchmark.csv')
-    visualize_accuracy_plot_sns('./results/accuracy_benchmark_1720825443.772248.csv')
+    visualize_accuracy_plot_sns('results/accuracy_benchmark_resources_1721165771758611967.csv')
