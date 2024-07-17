@@ -252,17 +252,23 @@ def run_benchmark(ezkl_optimization_goal: str, num_nodes: int, model_name: str) 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         print("Invalid usage!")
-        print(f'Usage: accuracy_benchmark <model>')
+        print(f'Usage: accuracy_benchmark <model> [storage_dir]')
         print(f'Available models are: {", ".join(AVAILABLE_MODELS)}')
         sys.exit(1)
 
     model_name: str = sys.argv[1]
     if model_name not in AVAILABLE_MODELS:
-        print(f'Incorrect model value! Available models are: {AVAILABLE_MODELS.join(",")}')
+        print(f'Incorrect model value! Available models are: {", ".join(AVAILABLE_MODELS)}')
         sys.exit(1)
+
+    # Option to set a custom path.
+    if len(sys.argv) == 3:
+        STORAGE_DIR = sys.argv[2]
     set_seed()
     os.makedirs(STORAGE_DIR, exist_ok=True)
     os.makedirs(RESULTS_DIR, exist_ok=True)
+
+    sys.exit(0)
 
     rows = []
     # There's an option here to add 'accuracy' as optimization goal. Runtimes increase DRASTICALLY.
