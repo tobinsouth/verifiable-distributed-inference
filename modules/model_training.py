@@ -74,15 +74,79 @@ class CNNModel(nn.Module):
     name = 'cnn'
 
     model_dimensions = [
-
+        (32, 1, 28, 28),
+        (32, 10, 28, 28),
+        (32, 10, 28, 28),
+        (32, 10, 14, 14),
+        (32, 25, 14, 14),
+        (32, 25, 14, 14),
+        (32, 25, 7, 7),
+        (32, 1225),
+        (32, 50),
+        (32, 50),
+        (32, 10),
+        (32, 10)
     ]
 
     def __init__(self):
         super().__init__()
-        # TODO: define layers
+        self.conv1 = nn.Conv2d(1, 10, (5, 5), padding=2)  # Adding padding to maintain spatial dimensions
+        self.relu1 = nn.ReLU()
+        self.maxpool1 = nn.MaxPool2d((2, 2), (2, 2))
+
+        self.conv2 = nn.Conv2d(10, 25, (5, 5), padding=2)  # Adding padding to maintain spatial dimensions
+        self.relu2 = nn.ReLU()
+        self.maxpool2 = nn.MaxPool2d((2, 2), (2, 2))
+
+        self.flatten = nn.Flatten()
+
+        self.fc1 = nn.Linear(25 * 7 * 7, 50)
+        self.relu3 = nn.ReLU()
+
+        self.fc2 = nn.Linear(50, 10)
+        self.relu4 = nn.ReLU()
+
+        self.fc4 = nn.Linear(10, 1)
 
     def forward(self, x):
-        # TODO: pass through defined layers
+        x = self.conv1(x)
+        x = self.relu1(x)
+        x = self.maxpool1(x)
+
+        x = self.conv2(x)
+        x = self.relu2(x)
+        x = self.maxpool2(x)
+
+        x = self.flatten(x)  # Flatten the tensor
+
+        x = self.fc1(x)
+        x = self.relu3(x)
+
+        x = self.fc2(x)
+        x = self.relu4(x)
+
+        x = self.fc4(x)
+        return x
+
+
+class AttentionLayer(nn.Module):
+
+    def __init__(self, embed_dim, num_heads):
+        super().__init__()
+        self.self_attention = nn.MultiheadAttention(embed_dim, num_heads)
+        self.norm = nn.LayerNorm(embed_dim)
+        self.feed_forward = nn.Sequential(
+            nn.Linear(embed_dim, embed_dim),
+            nn.ReLU(),
+            nn.Linear(embed_dim, embed_dim)
+        )
+
+    def forward(self, x):
+        attention_output, _ = self.self_attention(x, x, x)
+        x = x + attention_output
+        x = self.norm(x)
+        feed_forward_output = self.feed_forward(x)
+        x = x + feed_forward_output
         return x
 
 
@@ -90,15 +154,50 @@ class AttentionModel(nn.Module):
     name = 'attention'
 
     model_dimensions = [
-
+        (10, 32, 128),
+        (10, 32, 128),
+        (10, 32, 128),
+        (10, 32, 128),
+        (10, 32, 128),
+        (10, 32, 128),
+        (10, 32, 128),
+        (10, 32, 128),
+        (10, 32, 128),
+        (10, 32, 128),
+        (10, 32, 128),
+        (10, 32, 128)
     ]
+
+    num_heads_per_layer = 4
 
     def __init__(self):
         super().__init__()
-        # TODO: define layers
+        self.attention1 = AttentionLayer(self.model_dimensions[0][2], self.num_heads_per_layer)
+        self.attention2 = AttentionLayer(self.model_dimensions[1][2], self.num_heads_per_layer)
+        self.attention3 = AttentionLayer(self.model_dimensions[2][2], self.num_heads_per_layer)
+        self.attention4 = AttentionLayer(self.model_dimensions[3][2], self.num_heads_per_layer)
+        self.attention5 = AttentionLayer(self.model_dimensions[4][2], self.num_heads_per_layer)
+        self.attention6 = AttentionLayer(self.model_dimensions[5][2], self.num_heads_per_layer)
+        self.attention7 = AttentionLayer(self.model_dimensions[6][2], self.num_heads_per_layer)
+        self.attention8 = AttentionLayer(self.model_dimensions[7][2], self.num_heads_per_layer)
+        self.attention9 = AttentionLayer(self.model_dimensions[8][2], self.num_heads_per_layer)
+        self.attention10 = AttentionLayer(self.model_dimensions[9][2], self.num_heads_per_layer)
+        self.attention11 = AttentionLayer(self.model_dimensions[10][2], self.num_heads_per_layer)
+        self.attention12 = AttentionLayer(self.model_dimensions[11][2], self.num_heads_per_layer)
 
     def forward(self, x):
-        # TODO: pass through defined layers
+        x = self.attention1(x)
+        x = self.attention2(x)
+        x = self.attention3(x)
+        x = self.attention4(x)
+        x = self.attention5(x)
+        x = self.attention6(x)
+        x = self.attention7(x)
+        x = self.attention8(x)
+        x = self.attention9(x)
+        x = self.attention10(x)
+        x = self.attention11(x)
+        x = self.attention12(x)
         return x
 
 
@@ -122,6 +221,8 @@ class Trainer:
         elif model_name == AttentionModel.name:
             self.model = AttentionModel().to(DEVICE)
         else:
+            print(f'Invalid model name provided (options: {", ".join(AVAILABLE_MODELS)}), '
+                  f'reverting to {LinearReluModel.name}')
             self.model = LinearReluModel().to(DEVICE)
         self.loss_fn = nn.CrossEntropyLoss()
         self.optimizer = torch.optim.SGD(self.model.parameters(), lr=1e-3)
