@@ -249,12 +249,58 @@ def run_benchmark(ezkl_optimization_goal: str, num_nodes: int, model_name: str) 
     return total_loss
 
 
+# if __name__ == '__main__':
+#     # Example usage:
+#     # python accuracy_benchmark.py linear_relu ./tmp
+#     # python accuracy_benchmark.py cnn ./tmp2
+#     # python accuracy_benchmark.py attention ./tmp3
+#
+#     if len(sys.argv) < 2:
+#         print("Invalid usage!")
+#         print(f'Usage: accuracy_benchmark <model> [storage_dir]')
+#         print(f'Available models are: {", ".join(AVAILABLE_MODELS)}')
+#         sys.exit(1)
+#
+#     model_name: str = sys.argv[1]
+#     if model_name not in AVAILABLE_MODELS:
+#         print(f'Incorrect model value! Available models are: {", ".join(AVAILABLE_MODELS)}')
+#         sys.exit(1)
+#
+#     # Option to set a custom path.
+#     if len(sys.argv) == 3:
+#         STORAGE_DIR = sys.argv[2]
+#     set_seed()
+#     os.makedirs(STORAGE_DIR, exist_ok=True)
+#     os.makedirs(RESULTS_DIR, exist_ok=True)
+#
+#     rows = []
+#     # There's an option here to add 'accuracy' as optimization goal. Runtimes increase DRASTICALLY.
+#     for optimization_goal in ['resources']:
+#         for num_nodes in [1, 2, 3, 4, 6, 12]:
+#             print(f'Running config for: Model {model_name} with {optimization_goal} goal and {num_nodes} nodes')
+#             accuracy_loss = run_benchmark(optimization_goal, num_nodes, model_name)
+#             print(f'Completed benchmarking for: {optimization_goal} with {num_nodes} nodes -> {accuracy_loss}')
+#             row = {
+#                 'ezkl_optimization_goal': optimization_goal,
+#                 'num_nodes': num_nodes,
+#                 'accuracy_loss': accuracy_loss,
+#                 'reference_accuracy_loss': 0,  # Reference value for the 'ideal' loss value
+#                 'model': model_name
+#             }
+#             rows.append(row)
+#             print(row)
+#
+#         df = pd.DataFrame(rows)
+#         df.to_csv(f'{RESULTS_DIR}/accuracy_benchmark_{optimization_goal}_{time.time_ns()}.csv')
+#         rows = []
+#         print(f'Saved {optimization_goal} benchmarking results')
+#     print('Saved ALL benchmarking results')
+
 if __name__ == '__main__':
     # Example usage:
     # python accuracy_benchmark.py linear_relu ./tmp
     # python accuracy_benchmark.py cnn ./tmp2
     # python accuracy_benchmark.py attention ./tmp3
-
 
     if len(sys.argv) < 2:
         print("Invalid usage!")
@@ -274,7 +320,11 @@ if __name__ == '__main__':
     os.makedirs(STORAGE_DIR, exist_ok=True)
     os.makedirs(RESULTS_DIR, exist_ok=True)
 
-    rows = []
+    # Open the CSV file for appending
+    csv_file_path = f'{RESULTS_DIR}/accuracy_benchmark_{time.time_ns()}.csv'
+    with open(csv_file_path, 'a') as csv_file:
+        csv_file.write('ezkl_optimization_goal,num_nodes,accuracy_loss,reference_accuracy_loss,model\n')
+
     # There's an option here to add 'accuracy' as optimization goal. Runtimes increase DRASTICALLY.
     for optimization_goal in ['resources']:
         for num_nodes in [1, 2, 3, 4, 6, 12]:
@@ -288,11 +338,10 @@ if __name__ == '__main__':
                 'reference_accuracy_loss': 0,  # Reference value for the 'ideal' loss value
                 'model': model_name
             }
-            rows.append(row)
             print(row)
 
-        df = pd.DataFrame(rows)
-        df.to_csv(f'{RESULTS_DIR}/accuracy_benchmark_{optimization_goal}_{time.time_ns()}.csv')
-        rows = []
-        print(f'Saved {optimization_goal} benchmarking results')
+            # Write the row to the CSV file immediately
+            with open(csv_file_path, 'a') as csv_file:
+                csv_file.write(f"{optimization_goal},{num_nodes},{accuracy_loss},0,{model_name}\n")
+
     print('Saved ALL benchmarking results')
