@@ -17,12 +17,9 @@ PROOF_DIR = "./proof"
 VERBOSE = False
 
 
-# TODO: Find optimimal set of models (NEEDS to have 12 layers, so sharding works out nicely)
-
-
 # Define Models
-class LinearReluModel(nn.Module):
-    name = 'linear_relu'
+class MLPModel(nn.Module):
+    name = 'mlp'
 
     model_dimensions = [
         (1, 1, 5, 5),
@@ -202,7 +199,7 @@ class AttentionModel(nn.Module):
 
 
 AVAILABLE_MODELS = [
-    LinearReluModel.name,
+    MLPModel.name,
     CNNModel.name,
     AttentionModel.name
 ]
@@ -214,16 +211,16 @@ class Trainer:
                  load_training_data: bool = True,
                  model_name: str = ""):
         # check if there's a specific model that should be used
-        if model_name == LinearReluModel.name:
-            self.model = LinearReluModel().to(DEVICE)
+        if model_name == MLPModel.name:
+            self.model = MLPModel().to(DEVICE)
         elif model_name == CNNModel.name:
             self.model = CNNModel().to(DEVICE)
         elif model_name == AttentionModel.name:
             self.model = AttentionModel().to(DEVICE)
         else:
             print(f'Invalid model name provided (options: {", ".join(AVAILABLE_MODELS)}), '
-                  f'reverting to {LinearReluModel.name}')
-            self.model = LinearReluModel().to(DEVICE)
+                  f'reverting to {MLPModel.name}')
+            self.model = MLPModel().to(DEVICE)
         self.loss_fn = nn.CrossEntropyLoss()
         self.optimizer = torch.optim.SGD(self.model.parameters(), lr=1e-3)
         self.train_dataloader = None
