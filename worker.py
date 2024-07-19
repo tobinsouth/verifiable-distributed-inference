@@ -14,17 +14,7 @@ from modules.connection_handler import CoordinatorConnectionHandler, WorkerConne
 from modules.model_proving import Prover
 from modules.file_manager import FileManager
 from utils.helpers import conditional_print, decode_b64_to_np_array, encode_np_array_to_b64
-
-
-VERBOSE: bool = True
-# EZKL configuration
-# We want the input and outputs to be "publicly" visible in the
-INPUT_VISIBILITY: str = "public"
-OUTPUT_VISIBILITY: str = "public"
-PARAM_VISIBILITY: str = "hashed"
-OPTIMIZATION_GOAL: str = "resources"
-INPUT_SCALE = None
-PARAM_SCALE = None
+from config import VERBOSE, INPUT_VISIBILITY, OUTPUT_VISIBILITY, PARAM_VISIBILITY, OPTIMIZATION_GOAL, INPUT_SCALE, PARAM_SCALE
 
 
 class Worker:
@@ -33,7 +23,7 @@ class Worker:
                  coordinator_address: Tuple[str, int],
                  node_role: str,
                  benchmarking_mode: bool = False):
-
+        # TODO: pass an OPTIONAL param to store custom storage path!
         self.shard_id: int = None
         self.model_id: str = None
 
@@ -100,7 +90,8 @@ class Worker:
             if not self.node_role == "SOLO":
                 # Report the address that a worker can accept connections from. Important for the previous worker
                 if not self.node_role == "FIRST":
-                    self.coordinator_conn_handler.send(f"set_inbound_connection_address|{self.address[0]}|{self.address[1]}")
+                    self.coordinator_conn_handler.send(f"set_inbound_connection_address|"
+                                                       f"{self.address[0]}|{self.address[1]}")
 
                 # The last node will not need to obtain and/or connect to another node.
                 # All other worker nodes should obtain the address of their subsequent node to connect to.
@@ -191,9 +182,11 @@ class Worker:
         self.model_id = model_id
         # The FileManager has to be initialized here, as this is the earliest time that the worker has access to both
         # IDs.
+        # TODO: ADD STORAGE DIR HERE!!!!
         self.file_manager = FileManager(
             model_id=model_id,
-            shard_id=shard_id
+            shard_id=shard_id,
+            storage_dir=''
         )
         # The Prover also has to be initialized here, as it relies on the file_manager
         self.prover = Prover(
@@ -295,11 +288,15 @@ class Worker:
 
         # The last node send the final result to the coordinator. Also applies when there's only one node.
         if self.node_role == "LAST" or self.node_role == "SOLO":
-            message: bytes = b'report_final_inference_output|' + self.inference_run_counter.to_bytes(8, byteorder='big') + b'|' + encoded_output_data
+            message: bytes = (b'report_final_inference_output|' +
+                              self.inference_run_counter.to_bytes(8, byteorder='big') +
+                              b'|' +
+                              encoded_output_data)
             self.coordinator_conn_handler.send_bytes(message)
         # All other nodes send their result to their neighbouring node (outbound_worker_connection).
         else:
-            message: bytes = b'run_inference|' + encoded_output_data
+            message: bytes = (b'run_inference|' +
+                              encoded_output_data)
             self.outbound_worker_conn_handler.send_bytes(message)
 
         self.coordinator_conn_handler.send(f"report_witness|{witness_id}")
@@ -348,13 +345,15 @@ class Worker:
 
 if __name__ == "__main__":
     # Workers need to be started in order: FIRST ... ... ... LAST
+    # TODO: add new "required" params like [benchmarking_mode] and [storage_dir]
     if len(sys.argv) != 6:
         print(f'Usage: worker.py <worker_host> <worker_port> <coordinator_host> <coordinator_port> [node_role]')
         print('[node_role] has 3 options: FIRST, LAST, or SOLO. \n'
               '>1 node: One node has to identify as the FIRST/LAST, the others don\'t\n'
               '=1 node: Node identifies as SOLO')
-        sys.exit(0)
+        sys.exit(1)
 
+    # TODO: fix this entire param parsing
     worker_address = (sys.argv[1], int(sys.argv[2]))
     coordinator_address = (sys.argv[3], int(sys.argv[4]))
     node_role = ""

@@ -11,23 +11,21 @@ import torch
 from modules.connection_handler import CoordinatorConnectionHandler
 from modules.witness_manager import WitnessManager
 from modules.model_processing import Processor
-from modules.model_training import Trainer
+from modules.model_training import Trainer, AVAILABLE_MODELS
 from modules.model_proving import Prover
 from modules.file_manager import FileManager
 from torch import nn
 from utils.helpers import conditional_print, decode_b64_to_np_array, encode_np_array_to_b64
-
-VERBOSE = True
-MODEL_ID = "model_0"
-MODEL_STORAGE_DIR = "./shared-storage/shards"
-RUN_LOGIC = True
+from config import STORAGE_DIR, VERBOSE
 
 
 class Coordinator:
     def __init__(self,
                  address: Tuple[str, int],
                  num_shards: int,
-                 benchmarking_mode: bool = False):
+                 model_name: str,
+                 benchmarking_mode: bool = False,
+                 storage_dir: str = STORAGE_DIR):
         self.connections: dict[str, threading.Thread] = {}
         self.handlers: dict[str, CoordinatorConnectionHandler] = {}
         self.connection_to_inbound_address: dict = {}
@@ -36,14 +34,16 @@ class Coordinator:
         self.witness_manager: WitnessManager = WitnessManager()
         self.num_shards: int = num_shards
         self.num_ready_nodes: int = 0
+        self.model_name: str = model_name
         self.benchmarking_mode: bool = benchmarking_mode
+        self.storage_dir: str = storage_dir
 
     def run(self) -> None:
         self.open_socket()
-        trainer = Trainer()
-        # Optionally train the model here.
-        # trainer.train()
-        # trainer.eval()
+        trainer = Trainer(
+            load_training_data=False,
+            model_name=self.model_name
+        )
 
         model: nn.Module = trainer.model
 
@@ -62,8 +62,8 @@ class Coordinator:
         conditional_print("[PREPROCESSING] Sharded model", VERBOSE)
 
         model_processor.save(
-            model_id=MODEL_ID,
-            storage_dir=MODEL_STORAGE_DIR
+            model_id=self.model_name,
+            storage_dir=FileManager.get_model_storage_dir_static(self.storage_dir)
         )
 
         conditional_print("[PREPROCESSING] Saved model (shards)", VERBOSE)
@@ -88,7 +88,7 @@ class Coordinator:
                     address=socket_address,
                     initiating_node=self,
                     shard_id=connection_counter,
-                    model_id=MODEL_ID
+                    model_id=self.model_name
                 )
                 conn_thread = threading.Thread(
                     target=conn_handler.run
@@ -114,13 +114,15 @@ class Coordinator:
                 first_node_handler: CoordinatorConnectionHandler = list(self.handlers.values())[0]
 
                 # second_node_handler: CoordinatorConnectionHandler = list(self.handlers.values())[1]
-                np_arr = Trainer.get_dummy_input().cpu().numpy()
+                np_arr = trainer.get_dummy_input().cpu().numpy()
                 encoded_np_arr = encode_np_array_to_b64(np_arr)
                 message: bytes = b'run_inference|' + encoded_np_arr
                 first_node_handler.send_bytes(message)
 
                 time.sleep(10)
 
+                # TODO: read from the witness_manager and trigger getting all of the proofs.
+                #  (it should only be one per node)
                 first_node_handler.send(f'get_proof|1ca6dd0091304ca9b985b615a4998eaa_0')
 
                 # Triggers all
@@ -173,13 +175,13 @@ class Coordinator:
         # for all future proofs.
         Prover.verify_proof(
             proof_path=proof_path,
-            settings_path=FileManager.get_settings_path_static(shard_id, model_id),
-            vk_path=FileManager.get_vk_path_static(shard_id, model_id)
+            settings_path=FileManager.get_settings_path_static(shard_id, model_id, self.storage_dir),
+            vk_path=FileManager.get_vk_path_static(shard_id, model_id, self.storage_dir)
         )
 
     # Saves the final inference output to a file
     def save_final_inference_output(self, raw_output_data: bytes, run_id: int) -> None:
-        file_path: str = FileManager.get_final_output_path(MODEL_ID, run_id)
+        file_path: str = FileManager.get_final_output_path(self.model_name, run_id, self.storage_dir)
         output_array: np.ndarray = decode_b64_to_np_array(raw_output_data)
         raw_output_file_data: dict = dict(
             output_shapes=[output_array.shape],
