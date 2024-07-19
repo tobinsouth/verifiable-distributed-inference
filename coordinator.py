@@ -198,14 +198,61 @@ class Coordinator:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 4:
-        print(f'Usage: coordinator.py <host> <port> <num_shards>')
-        sys.exit(0)
+    if len(sys.argv) < 5:
+        print(f'Usage: coordinator.py <host> <port> <num_shards> <model> [benchmarking_mode] [storage_dir]')
+        sys.exit(1)
 
     address = (sys.argv[1], int(sys.argv[2]))
     num_shards = int(sys.argv[3])
-    coordinator = Coordinator(
-        address=address,
-        num_shards=num_shards
-    )
+    model_name = sys.argv[4]
+
+    if model_name not in AVAILABLE_MODELS:
+        print(f'Incorrect model value! Available models are: {", ".join(AVAILABLE_MODELS)}')
+        sys.exit(1)
+
+    coordinator = None
+
+    if len(sys.argv) == 5:
+        coordinator = Coordinator(
+            address=address,
+            num_shards=num_shards,
+            model_name=model_name
+        )
+
+    benchmarking_mode = False
+    if len(sys.argv) == 6:
+        if sys.argv[5] == 'true':
+            benchmarking_mode = True
+        elif sys.argv[5] == 'false':
+            benchmarking_mode = False
+        else:
+            print(f'Incorrect benchmarking_mode value! Options are: true, false')
+            sys.exit(1)
+
+        coordinator = Coordinator(
+            address=address,
+            num_shards=num_shards,
+            model_name=model_name,
+            benchmarking_mode=benchmarking_mode
+        )
+
+    storage_dir: str = sys.argv[6]
+    if len(sys.argv) == 7:
+        if storage_dir == "":
+            print(f'Incorrect storage_dir value!')
+            sys.exit(1)
+        storage_dir: str = sys.argv[6]
+
+        coordinator = Coordinator(
+            address=address,
+            num_shards=num_shards,
+            model_name=model_name,
+            benchmarking_mode=benchmarking_mode,
+            storage_dir=storage_dir
+        )
+
+    if len(sys.argv) > 7:
+        print(f'Too many arguments!')
+        sys.exit(1)
+
     coordinator.run()
