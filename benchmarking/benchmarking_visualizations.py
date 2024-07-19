@@ -45,7 +45,7 @@ def visualize_accuracy_plot_sns(data_path: str):
         data=df,
         x='num_nodes',
         y='accuracy_loss',
-        # hue='ezkl_optimization_goal',
+        hue='model',
         style='model',
         s=120
     )
@@ -71,4 +71,4 @@ def visualize_accuracy_plot_sns(data_path: str):
 
 if __name__ == '__main__':
     # visualize_accuracy_plot('./results/accuracy_benchmark.csv')
-    visualize_accuracy_plot_sns('results/accuracy_benchmark_resources_1721165771758611967.csv')
+    visualize_accuracy_plot_sns('results/final/accuracy_benchmark_all')
