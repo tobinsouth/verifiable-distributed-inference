@@ -289,7 +289,6 @@ class Trainer:
         if VERBOSE:
             print(f"Test Error: \n Accuracy: {(100 * correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
 
-    @staticmethod
-    def get_dummy_input() -> torch.Tensor:
-        # return torch.randn(1, 1, 28, 28).to(DEVICE)
-        return torch.randn(1, 1, 5, 5).to(DEVICE)
+    # Returns a dummy input for the first layer of the model. Needed to generate ONNX export.
+    def get_dummy_input(self) -> torch.Tensor:
+        return torch.randn(*self.model.model_dimensions[0]).to(DEVICE)
