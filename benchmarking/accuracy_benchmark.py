@@ -298,9 +298,9 @@ def run_benchmark(ezkl_optimization_goal: str, num_nodes: int, model_name: str) 
 
 if __name__ == '__main__':
     # Example usage:
-    # python accuracy_benchmark.py mlp ./tmp
-    # python accuracy_benchmark.py cnn ./tmp2
-    # python accuracy_benchmark.py attention ./tmp3
+    # python accuracy_benchmark.py mlp ./tmp-mlp
+    # python accuracy_benchmark.py cnn ./tmp-cnn
+    # python accuracy_benchmark.py attention ./tmp-attention
 
     if len(sys.argv) < 2:
         print("Invalid usage!")
