@@ -327,7 +327,7 @@ if __name__ == '__main__':
 
     # There's an option here to add 'accuracy' as optimization goal. Runtimes increase DRASTICALLY.
     for optimization_goal in ['resources']:
-        for num_nodes in [1, 2, 3, 4, 6, 12]:
+        for num_nodes in [1, 3, 4, 6, 12]:
             print(f'Running config for: Model {model_name} with {optimization_goal} goal and {num_nodes} nodes')
             accuracy_loss = run_benchmark(optimization_goal, num_nodes, model_name)
             print(f'Completed benchmarking for: {optimization_goal} with {num_nodes} nodes -> {accuracy_loss}')
