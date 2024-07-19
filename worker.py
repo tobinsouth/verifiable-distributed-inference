@@ -14,7 +14,7 @@ from modules.connection_handler import CoordinatorConnectionHandler, WorkerConne
 from modules.model_proving import Prover
 from modules.file_manager import FileManager
 from utils.helpers import conditional_print, decode_b64_to_np_array, encode_np_array_to_b64
-from config import VERBOSE, INPUT_VISIBILITY, OUTPUT_VISIBILITY, PARAM_VISIBILITY, OPTIMIZATION_GOAL, INPUT_SCALE, PARAM_SCALE
+from config import STORAGE_DIR, VERBOSE, INPUT_VISIBILITY, OUTPUT_VISIBILITY, PARAM_VISIBILITY, OPTIMIZATION_GOAL, INPUT_SCALE, PARAM_SCALE
 
 
 class Worker:
@@ -22,10 +22,11 @@ class Worker:
                  address: Tuple[str, int],
                  coordinator_address: Tuple[str, int],
                  node_role: str,
-                 benchmarking_mode: bool = False):
-        # TODO: pass an OPTIONAL param to store custom storage path!
+                 benchmarking_mode: bool = False,
+                 storage_dir: str = STORAGE_DIR):
         self.shard_id: int = None
         self.model_id: str = None
+        self.storage_dir: str = storage_dir
 
         # Switch to log/time results to be used for benchmarking results
         self.benchmarking_mode: bool = benchmarking_mode
@@ -182,11 +183,10 @@ class Worker:
         self.model_id = model_id
         # The FileManager has to be initialized here, as this is the earliest time that the worker has access to both
         # IDs.
-        # TODO: ADD STORAGE DIR HERE!!!!
         self.file_manager = FileManager(
             model_id=model_id,
             shard_id=shard_id,
-            storage_dir=''
+            storage_dir=self.storage_dir
         )
         # The Prover also has to be initialized here, as it relies on the file_manager
         self.prover = Prover(
@@ -346,20 +346,66 @@ class Worker:
 if __name__ == "__main__":
     # Workers need to be started in order: FIRST ... ... ... LAST
     # TODO: add new "required" params like [benchmarking_mode] and [storage_dir]
-    if len(sys.argv) != 6:
-        print(f'Usage: worker.py <worker_host> <worker_port> <coordinator_host> <coordinator_port> [node_role]')
-        print('[node_role] has 3 options: FIRST, LAST, or SOLO. \n'
-              '>1 node: One node has to identify as the FIRST/LAST, the others don\'t\n'
+    if len(sys.argv) < 6:
+        print(f'Usage: worker.py <worker_host> <worker_port> <coordinator_host> <coordinator_port> '
+              f'<node_role> [benchmarking_mode] [storage_dir]')
+        sys.exit(1)
+
+    worker_address = (sys.argv[1], int(sys.argv[2]))
+    coordinator_address = (sys.argv[3], int(sys.argv[4]))
+
+    node_role = sys.argv[5]
+    if node_role not in ['FIRST', 'MIDDLE', 'LAST', 'SOLO']:
+        print('[node_role] has 3 options: FIRST, MIDDLE, LAST, or SOLO. \n'
+              '>1 node: One node has to identify as the FIRST/LAST, the others as MIDDLE\n'
               '=1 node: Node identifies as SOLO')
         sys.exit(1)
 
-    # TODO: fix this entire param parsing
-    worker_address = (sys.argv[1], int(sys.argv[2]))
-    coordinator_address = (sys.argv[3], int(sys.argv[4]))
-    node_role = ""
-    if len(sys.argv) > 5:
-        node_role = sys.argv[5]
-    # TODO: activate benchmarking mode
-    worker = Worker(worker_address, coordinator_address, node_role)
-    # worker = Worker(worker_address, coordinator_address, node_role, True)
+    worker = None
+
+    if len(sys.argv) == 6:
+        worker = Worker(
+            address=worker_address,
+            coordinator_address=coordinator_address,
+            node_role=node_role
+        )
+
+    benchmarking_mode = False
+    if len(sys.argv) == 7:
+        if sys.argv[6] == 'true':
+            benchmarking_mode = True
+        elif sys.argv[6] == 'false':
+            benchmarking_mode = False
+        else:
+            print(f'Incorrect benchmarking_mode value! Options are: true, false')
+            sys.exit(1)
+        worker = Worker(
+            address=worker_address,
+            coordinator_address=coordinator_address,
+            node_role=node_role,
+            benchmarking_mode=benchmarking_mode
+        )
+
+    storage_dir: str = sys.argv[7]
+    if len(sys.argv) == 8:
+        if sys.argv[6] == 'true':
+            benchmarking_mode = True
+        elif sys.argv[6] == 'false':
+            benchmarking_mode = False
+        else:
+            print(f'Incorrect benchmarking_mode value! Options are: true, false')
+            sys.exit(1)
+
+        if storage_dir == '':
+            print(f'Incorrect storage_dir value!')
+            sys.exit(1)
+
+        worker = Worker(
+            address=worker_address,
+            coordinator_address=coordinator_address,
+            node_role=node_role,
+            benchmarking_mode=benchmarking_mode,
+            storage_dir=storage_dir
+        )
+
     worker.run()

@@ -238,10 +238,17 @@ if __name__ == "__main__":
 
     storage_dir: str = sys.argv[6]
     if len(sys.argv) == 7:
+        if sys.argv[5] == 'true':
+            benchmarking_mode = True
+        elif sys.argv[5] == 'false':
+            benchmarking_mode = False
+        else:
+            print(f'Incorrect benchmarking_mode value! Options are: true, false')
+            sys.exit(1)
+
         if storage_dir == "":
             print(f'Incorrect storage_dir value!')
             sys.exit(1)
-        storage_dir: str = sys.argv[6]
 
         coordinator = Coordinator(
             address=address,
