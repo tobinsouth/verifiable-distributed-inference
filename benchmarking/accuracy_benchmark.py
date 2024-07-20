@@ -267,7 +267,7 @@ if __name__ == '__main__':
 
     if len(sys.argv) < 2:
         print("Invalid usage!")
-        print(f'Usage: accuracy_benchmark <model> [storage_dir]')
+        print(f'Usage: accuracy_benchmark <model> [storage_dir] [num_nodes]')
         print(f'Available models are: {", ".join(AVAILABLE_MODELS)}')
         sys.exit(1)
 
@@ -276,9 +276,22 @@ if __name__ == '__main__':
         print(f'Incorrect model value! Available models are: {", ".join(AVAILABLE_MODELS)}')
         sys.exit(1)
 
-    # Option to set a custom path.
     if len(sys.argv) == 3:
         STORAGE_DIR = sys.argv[2]
+
+    num_node_list: list[int] = []
+    default_num_node_list: list[int] = [1, 2, 3, 4, 6, 12]
+    if len(sys.argv) == 4:
+        STORAGE_DIR = sys.argv[2]
+        num_nodes = int(sys.argv[3])
+        if num_nodes not in default_num_node_list:
+            print(f'Invalid value for num_nodes: {num_nodes} (must be between any one of: {default_num_node_list})')
+            sys.exit(1)
+        else:
+            num_node_list.append(num_nodes)
+    else:
+        num_node_list = default_num_node_list
+
     set_seed()
     os.makedirs(STORAGE_DIR, exist_ok=True)
     os.makedirs(RESULTS_DIR, exist_ok=True)
@@ -290,7 +303,7 @@ if __name__ == '__main__':
 
     # There's an option here to add 'accuracy' as optimization goal. Runtimes increase DRASTICALLY.
     for optimization_goal in ['resources']:
-        for num_nodes in [1, 3, 4, 6, 12]:
+        for num_nodes in num_node_list:
             print(f'Running config for: Model {model_name} with {optimization_goal} goal and {num_nodes} nodes')
             accuracy_loss = run_benchmark(optimization_goal, num_nodes, model_name)
             print(f'Completed benchmarking for: {optimization_goal} with {num_nodes} nodes -> {accuracy_loss}')
