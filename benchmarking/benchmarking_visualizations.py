@@ -89,7 +89,6 @@ def vis_accuracy(data_path: str):
         ax=ax
     )
 
-
     ax.set_xlabel('No. of nodes/shards', fontsize=12)
     ax.set_ylabel('Cumulative RMSE Loss', fontsize=12)
     ax.set_title('Accuracy Loss', fontsize=16)
