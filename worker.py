@@ -133,20 +133,7 @@ class Worker:
             self.coordinator_conn_handler.send("report_setup_complete")
 
         except KeyboardInterrupt:
-            if self.coordinator_socket is not None:
-                self.coordinator_conn_handler.RUNNING = False
-                self.coordinator_socket.close()
-                self.conn_coordinator_thread.join()
-
-            if self.outbound_worker_socket is not None:
-                self.outbound_worker_conn_handler.RUNNING = False
-                self.outbound_worker_socket.close()
-                self.outbound_conn_worker_thread.join()
-
-            if self.inbound_worker_socket is not None:
-                self.inbound_worker_conn_handler.RUNNING = False
-                self.inbound_worker_socket.close()
-                self.inbound_conn_worker_thread.join()
+            self.shutdown()
             sys.exit(0)
 
     def connect_to_coordinator(self):
@@ -341,6 +328,23 @@ class Worker:
         df_witness_times.to_csv(f'{data_dir}/{self.model_id}_{self.shard_id}_witness_times.csv')
         df_proving_times.to_csv(f'{data_dir}/{self.model_id}_{self.shard_id}_proving_times.csv')
         df_setup_times.to_csv(f'{data_dir}/{self.model_id}_{self.shard_id}_setup_times.csv')
+
+    # Triggers shutdown logic where connection handlers are stopped, sockets are closed and threads shutdown.
+    def shutdown(self):
+        if self.coordinator_socket is not None:
+            self.coordinator_conn_handler.RUNNING = False
+            self.coordinator_socket.close()
+            self.conn_coordinator_thread.join()
+
+        if self.outbound_worker_socket is not None:
+            self.outbound_worker_conn_handler.RUNNING = False
+            self.outbound_worker_socket.close()
+            self.outbound_conn_worker_thread.join()
+
+        if self.inbound_worker_socket is not None:
+            self.inbound_worker_conn_handler.RUNNING = False
+            self.inbound_worker_socket.close()
+            self.inbound_conn_worker_thread.join()
 
 
 if __name__ == "__main__":

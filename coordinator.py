@@ -128,6 +128,9 @@ class Coordinator:
                 # Triggers all
                 for handler in list(self.handlers.values()):
                     handler.send('save_benchmarking_results')
+                    time.sleep(10)
+                    # After nodes have been saved, trigger shutdown (this is important, as it properly frees up ports etc.)
+                    handler.send('shutdown')
 
         except KeyboardInterrupt:
             self.socket.close()
