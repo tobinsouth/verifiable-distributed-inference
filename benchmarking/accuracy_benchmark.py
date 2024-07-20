@@ -173,6 +173,11 @@ def run_benchmark(ezkl_optimization_goal: str, num_nodes: int, model_name: str) 
 
     prev_output = torch.randn(*shard_dimensions[0]).to(DEVICE)
 
+    # Generate a 5 random calibration datapoints
+    # calibration_data: list[np.ndarray] = [np.random.rand(*shard_dimensions[0]).astype(np.float32).flatten().tolist()
+    #                                       for _ in range(5)]
+    calibration_data: list[torch.Tensor] = [torch.rand(*shard_dimensions[0]) for _ in range(5)]
+
     total_loss: float = 0
     for i in range(num_nodes):
         # Define filepaths
@@ -186,12 +191,17 @@ def run_benchmark(ezkl_optimization_goal: str, num_nodes: int, model_name: str) 
         pk_path = f"{STORAGE_DIR}/{model_id}_shard_{i}_pk.key"
         witness_path = f"{STORAGE_DIR}/{model_id}_shard_{i}_witness.json"
 
-        # Generate a 5 random calibration datapoints
-        calibration_data: list[np.ndarray] = [np.random.rand(*shard_dimensions[i]).astype(np.float32).flatten().tolist()
-                                              for _ in range(5)]
+        calibration_file_data = []
+        for j in range(len(calibration_data)):
+            try:
+                np_arr = calibration_data[j].to('cpu').numpy().astype(np.float32)
+            except Exception:
+                np_arr = calibration_data[j].to('cpu').detach().numpy().astype(np.float32)
+            calibration_file_data.append(np_arr.flatten().tolist())
+            calibration_data[j] = shards[i](calibration_data[j])
 
         cal_data = dict(
-            input_data=calibration_data
+            input_data=calibration_file_data
         )
         json.dump(cal_data, open(calibration_data_path, 'w'))
 
@@ -248,53 +258,6 @@ def run_benchmark(ezkl_optimization_goal: str, num_nodes: int, model_name: str) 
 
     return total_loss
 
-
-# if __name__ == '__main__':
-#     # Example usage:
-#     # python accuracy_benchmark.py linear_relu ./tmp
-#     # python accuracy_benchmark.py cnn ./tmp2
-#     # python accuracy_benchmark.py attention ./tmp3
-#
-#     if len(sys.argv) < 2:
-#         print("Invalid usage!")
-#         print(f'Usage: accuracy_benchmark <model> [storage_dir]')
-#         print(f'Available models are: {", ".join(AVAILABLE_MODELS)}')
-#         sys.exit(1)
-#
-#     model_name: str = sys.argv[1]
-#     if model_name not in AVAILABLE_MODELS:
-#         print(f'Incorrect model value! Available models are: {", ".join(AVAILABLE_MODELS)}')
-#         sys.exit(1)
-#
-#     # Option to set a custom path.
-#     if len(sys.argv) == 3:
-#         STORAGE_DIR = sys.argv[2]
-#     set_seed()
-#     os.makedirs(STORAGE_DIR, exist_ok=True)
-#     os.makedirs(RESULTS_DIR, exist_ok=True)
-#
-#     rows = []
-#     # There's an option here to add 'accuracy' as optimization goal. Runtimes increase DRASTICALLY.
-#     for optimization_goal in ['resources']:
-#         for num_nodes in [1, 2, 3, 4, 6, 12]:
-#             print(f'Running config for: Model {model_name} with {optimization_goal} goal and {num_nodes} nodes')
-#             accuracy_loss = run_benchmark(optimization_goal, num_nodes, model_name)
-#             print(f'Completed benchmarking for: {optimization_goal} with {num_nodes} nodes -> {accuracy_loss}')
-#             row = {
-#                 'ezkl_optimization_goal': optimization_goal,
-#                 'num_nodes': num_nodes,
-#                 'accuracy_loss': accuracy_loss,
-#                 'reference_accuracy_loss': 0,  # Reference value for the 'ideal' loss value
-#                 'model': model_name
-#             }
-#             rows.append(row)
-#             print(row)
-#
-#         df = pd.DataFrame(rows)
-#         df.to_csv(f'{RESULTS_DIR}/accuracy_benchmark_{optimization_goal}_{time.time_ns()}.csv')
-#         rows = []
-#         print(f'Saved {optimization_goal} benchmarking results')
-#     print('Saved ALL benchmarking results')
 
 if __name__ == '__main__':
     # Example usage:
