@@ -3,36 +3,41 @@ import sys
 import time
 import os
 
-from modules.model_training import AVAILABLE_MODELS
-
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-RESULTS_DIR = './results'
-STORAGE_DIR = './tmp-system-benchmark'
+from modules.model_training import AVAILABLE_MODELS
 
 
-def start_coordinator(host, port, num_shards):
-    # TODO: fix parameters on this
+
+def start_coordinator(host: str, port: int, num_shards: int, model_name: str, storage_dir: str):
     return subprocess.Popen(
-        ['python', '../coordinator.py', host, str(port), str(num_shards)]
+        ['python', '../coordinator.py', host, str(port), str(num_shards), model_name, 'true', storage_dir]
     )
 
 
-def start_worker(host, port, coordinator_host, coordinator_port, node_role):
-    # TODO: fix parameters on this
+def start_worker(host: str, port: int, coordinator_host: str, coordinator_port: int, node_role: str, storage_dir: str):
     return subprocess.Popen(
-        ['python', '../worker.py', host, str(port), coordinator_host, str(coordinator_port), node_role]
+        ['python', '../worker.py', host, str(port), coordinator_host, str(coordinator_port), node_role, 'true', storage_dir]
     )
 
 
-# TODO: does the port_offset avoid port collisions??
 def run_setup(num_workers: int, model_name: str, port_offset: int):
+    # This storage dir will be the directory in which all workers and coordinator will be placing files in for this run.
+    # customize this per run.
+    # THIS PATH IS RELATIVE TO THE ROOT DIRECTORY OF THE PROJECT
+    storage_dir: str = f'./benchmarking/tmp-system-benchmark/{model_name}-{num_workers}'
     # Coordinator params
     coordinator_host: str = '127.0.0.1'
     coordinator_port: int = 8000 + port_offset
-    coordinator_process = start_coordinator(coordinator_host, coordinator_port, num_workers)
+    coordinator_process = start_coordinator(
+        host=coordinator_host,
+        port=coordinator_port,
+        num_shards=num_workers,
+        model_name=model_name,
+        storage_dir=storage_dir
+    )
 
     # Wait for coordinator to initialize
     time.sleep(10)
@@ -49,9 +54,18 @@ def run_setup(num_workers: int, model_name: str, port_offset: int):
         elif i == num_workers - 1:
             node_role: str = 'LAST'
         else:
-            node_role: str = ''
+            node_role: str = 'MIDDLE'
 
-        worker_processes.append(start_worker(worker_host, worker_port, coordinator_host, coordinator_port, node_role))
+        worker_processes.append(
+            start_worker(
+                host=worker_host,
+                port=worker_port,
+                coordinator_host=coordinator_host,
+                coordinator_port=coordinator_port,
+                node_role=node_role,
+                storage_dir=storage_dir
+            )
+        )
 
         # Wait for worker `i` to initialize
         time.sleep(10)
@@ -63,16 +77,14 @@ def run_setup(num_workers: int, model_name: str, port_offset: int):
 
 
 if __name__ == "__main__":
-    # TODO: add model support (we need to run these seperately for each model!)
-    # TODO: add storage path support (we need to run these concurrently!)
     # Example usage:
-    # python system_benchmark.py linear_relu ./tmp
-    # python system_benchmark.py cnn ./tmp2
-    # python system_benchmark.py attention ./tmp3
+    # python system_benchmark.py mlp
+    # python system_benchmark.py cnn
+    # python system_benchmark.py attention
 
     if len(sys.argv) < 2:
         print("Invalid usage!")
-        print(f'Usage: accuracy_benchmark <model> [storage_dir]')
+        print(f'Usage: system_benchmark <model>')
         print(f'Available models are: {", ".join(AVAILABLE_MODELS)}')
         sys.exit(1)
 
@@ -81,22 +93,20 @@ if __name__ == "__main__":
         print(f'Incorrect model value! Available models are: {", ".join(AVAILABLE_MODELS)}')
         sys.exit(1)
 
-    # Option to set a custom path.
-    if len(sys.argv) == 3:
-        STORAGE_DIR = sys.argv[2]
-
-    os.makedirs(STORAGE_DIR, exist_ok=True)
-    os.makedirs(RESULTS_DIR, exist_ok=True)
 
     # We need this port offset so that all three model benchmarks can run concurrently and don't block the
     # ports for each other.
     port_offset_table = {}
     for i, model_name_ in enumerate(AVAILABLE_MODELS):
-        port_offset_table[model_name_] = (i - 1) * 1000
+        port_offset_table[model_name_] = i * 1000
 
     # TODO: change back to [1, 2, 3, 4, 6, 12]
     # temporary for testing purposes
     for num_workers in [1]:
         print(f"Running setup with {num_workers} workers")
-        run_setup(num_workers, model_name, port_offset_table[model_name])
+        run_setup(
+            num_workers=num_workers,
+            model_name=model_name,
+            port_offset=port_offset_table[model_name]
+        )
         print(f"Setup with {num_workers} workers completed")
