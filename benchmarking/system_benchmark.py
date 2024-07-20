@@ -10,7 +10,6 @@ if project_root not in sys.path:
 from modules.model_training import AVAILABLE_MODELS
 
 
-
 def start_coordinator(host: str, port: int, num_shards: int, model_name: str, storage_dir: str):
     return subprocess.Popen(
         ['python', '../coordinator.py', host, str(port), str(num_shards), model_name, 'true', storage_dir]
@@ -19,7 +18,8 @@ def start_coordinator(host: str, port: int, num_shards: int, model_name: str, st
 
 def start_worker(host: str, port: int, coordinator_host: str, coordinator_port: int, node_role: str, storage_dir: str):
     return subprocess.Popen(
-        ['python', '../worker.py', host, str(port), coordinator_host, str(coordinator_port), node_role, 'true', storage_dir]
+        ['python', '../worker.py', host, str(port), coordinator_host, str(coordinator_port), node_role, 'true',
+         storage_dir]
     )
 
 
@@ -92,7 +92,6 @@ if __name__ == "__main__":
     if model_name not in AVAILABLE_MODELS:
         print(f'Incorrect model value! Available models are: {", ".join(AVAILABLE_MODELS)}')
         sys.exit(1)
-
 
     # We need this port offset so that all three model benchmarks can run concurrently and don't block the
     # ports for each other.
