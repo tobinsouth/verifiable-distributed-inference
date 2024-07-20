@@ -144,6 +144,4 @@ def vis_accuracy(data_path: str):
 
 
 if __name__ == '__main__':
-    # visualize_accuracy_plot('./results/accuracy_benchmark.csv')
-    # visualize_accuracy_plot_sns('results/final/accuracy_benchmark_all')
     vis_accuracy('results/final/accuracy_benchmark_all')
