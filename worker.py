@@ -55,7 +55,7 @@ class Worker:
         self.inbound_worker_conn_handler = None
         self.inbound_conn_worker_thread = None
 
-        # Can take values FIRST, LAST, SOLO
+        # Can take values FIRST, MIDDLE, LAST, SOLO
         self.node_role: str = node_role
 
         self.model_runtime_session: ort.InferenceSession = None
@@ -345,7 +345,6 @@ class Worker:
 
 if __name__ == "__main__":
     # Workers need to be started in order: FIRST ... ... ... LAST
-    # TODO: add new "required" params like [benchmarking_mode] and [storage_dir]
     if len(sys.argv) < 6:
         print(f'Usage: worker.py <worker_host> <worker_port> <coordinator_host> <coordinator_port> '
               f'<node_role> [benchmarking_mode] [storage_dir]')
