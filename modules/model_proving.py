@@ -237,8 +237,7 @@ class Prover:
 
     # Verifies ezkl proof.
     @staticmethod
-    def verify_proof(proof_path: str, settings_path: str, vk_path: str, srs_path: str) -> None:
-
+    def verify_proof(proof_path: str, settings_path: str, vk_path: str, srs_path: str):
         # Verify proof
         if USE_EZKL_CLI:
             return_code_verify = os.system(f'ezkl verify '

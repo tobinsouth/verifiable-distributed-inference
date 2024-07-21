@@ -31,9 +31,9 @@ class Worker:
 
         # Switch to log/time results to be used for benchmarking results
         self.benchmarking_mode: bool = benchmarking_mode
-        self.witness_data = []
-        self.proving_data = []
-        self.setup_data = []
+        self.witness_data: list = []
+        self.proving_data: list = []
+        self.setup_data: list = []
 
         # Address other nodes use to connect to worker
         self.address: Tuple[str, int] = address
