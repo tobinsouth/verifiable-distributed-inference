@@ -16,7 +16,7 @@ STORAGE_DIR/
 STORAGE_DIR: str = "./shared-storage"
 MODEL_SUB_DIR: str = "/shards"
 COORDINATOR_SUB_DIR: str = "/coordinator"
-BENCHMARKING_RESULTS_SUB_DIR: str = "/benchmark_results"
+BENCHMARKING_RESULTS_SUB_DIR: str = "/benchmarking_results"
 
 # Toggle for debug level prints
 VERBOSE: bool = True
@@ -24,7 +24,7 @@ VERBOSE: bool = True
 # Buffer size for socket message receiving
 BUF_SIZE = 4096
 
-#PyTorch configuration
+# PyTorch configuration
 DEVICE = "cpu"
 
 # ezkl configuration
