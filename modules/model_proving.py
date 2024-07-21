@@ -237,16 +237,15 @@ class Prover:
 
     # Verifies ezkl proof.
     @staticmethod
-    def verify_proof(proof_path: str, settings_path: str, vk_path: str) -> None:
-        # TODO: check if srs path needs to be passed!!!
-        # cli prints say this: --srs-path <SRS_PATH>            The path to SRS, if None will use $EZKL_REPO_PATH/srs/kzg{logrows}.srs
+    def verify_proof(proof_path: str, settings_path: str, vk_path: str, srs_path: str) -> None:
 
         # Verify proof
         if USE_EZKL_CLI:
             return_code_verify = os.system(f'ezkl verify '
-                                           f'--proof-path {proof_path}'
-                                           f'--settings-path {settings_path}'
-                                           f'--vk-path {vk_path}')
+                                           f'--proof-path {proof_path} '
+                                           f'--settings-path {settings_path} '
+                                           f'--vk-path {vk_path} '
+                                           f'--srs-path {srs_path}')
             if return_code_verify != 0:
                 conditional_print(f'Proof at {proof_path} NOT valid', VERBOSE)
             else:
