@@ -1,4 +1,5 @@
 import asyncio
+import os
 import sys
 import socket
 import threading
@@ -30,9 +31,9 @@ class Worker:
 
         # Switch to log/time results to be used for benchmarking results
         self.benchmarking_mode: bool = benchmarking_mode
-        self.witness_time_data = []
-        self.proving_time_data = []
-        self.setup_time_data = []
+        self.witness_data = []
+        self.proving_data = []
+        self.setup_data = []
 
         # Address other nodes use to connect to worker
         self.address: Tuple[str, int] = address
@@ -208,10 +209,23 @@ class Worker:
         if self.benchmarking_mode:
             end_time = time.perf_counter()
             difference: float = end_time - start_time
-            self.proving_time_data.append(
+
+            vk_file_size: int = 0
+            vk_path: str = self.file_manager.get_vk_path()
+            if os.path.exists(vk_path):
+                vk_file_size = os.path.getsize(vk_path)
+
+            pk_file_size: int = 0
+            pk_path: str = self.file_manager.get_pk_path()
+            if os.path.exists(vk_path):
+                pk_file_size = os.path.getsize(pk_path)
+
+            self.setup_data.append(
                 {
                     'shard_id': self.shard_id,
-                    'setup_time': difference
+                    'setup_time': difference,
+                    'vk_size': vk_file_size,
+                    'pk_size': pk_file_size
                 }
             )
 
@@ -259,11 +273,17 @@ class Worker:
         if self.benchmarking_mode:
             end_time = time.perf_counter()
             difference: float = end_time - start_time
-            self.witness_time_data.append(
+
+            witness_file_size: int = 0
+            witness_path: str = self.file_manager.get_witness_path(witness_id)
+            if os.path.exists(witness_path):
+                witness_file_size = os.path.getsize(witness_path)
+            self.witness_data.append(
                 {
                     'witness_id': witness_id,
                     'shard_id': self.shard_id,
-                    'witness_generation_time': difference
+                    'witness_generation_time': difference,
+                    'witness_size': witness_file_size
                 }
             )
 
@@ -302,15 +322,20 @@ class Worker:
         if self.benchmarking_mode:
             end_time = time.perf_counter()
             difference: float = end_time - start_time
-            self.proving_time_data.append(
+
+        proof_path: str = self.file_manager.get_proof_path(witness_id)
+        if self.benchmarking_mode:
+            file_size: int = 0
+            if os.path.exists(proof_path):
+                file_size = os.path.getsize(proof_path)
+            self.proving_data.append(
                 {
                     'witness_id': witness_id,
                     'shard_id': self.shard_id,
-                    'proof_generation_time': difference
+                    'proof_generation_time': difference,
+                    'proof_size': file_size
                 }
             )
-
-        proof_path: str = self.file_manager.get_proof_path(witness_id)
         self.coordinator_conn_handler.send(f'report_proof|{proof_path}')
 
     # Persists logged benchmarking results
@@ -318,32 +343,36 @@ class Worker:
         if not self.benchmarking_mode:
             return
 
-        df_witness_times = pd.DataFrame(self.witness_time_data)
-        df_proving_times = pd.DataFrame(self.proving_time_data)
-        df_setup_times = pd.DataFrame(self.setup_time_data)
+        df_witness_times = pd.DataFrame(self.witness_data)
+        df_proving_times = pd.DataFrame(self.proving_data)
+        df_setup_times = pd.DataFrame(self.setup_data)
 
         data_dir: str = self.file_manager.get_benchmarking_results_dir()
 
-        df_witness_times.to_csv(f'{data_dir}/{self.model_id}_{self.shard_id}_witness_times.csv')
-        df_proving_times.to_csv(f'{data_dir}/{self.model_id}_{self.shard_id}_proving_times.csv')
-        df_setup_times.to_csv(f'{data_dir}/{self.model_id}_{self.shard_id}_setup_times.csv')
+        df_witness_times.to_csv(f'{data_dir}/{self.model_id}_{self.shard_id}_witness_data.csv', index=False)
+        df_proving_times.to_csv(f'{data_dir}/{self.model_id}_{self.shard_id}_proving_data.csv', index=False)
+        df_setup_times.to_csv(f'{data_dir}/{self.model_id}_{self.shard_id}_setup_data.csv', index=False)
 
     # Triggers shutdown logic where connection handlers are stopped, sockets are closed and threads shutdown.
     def shutdown(self):
         if self.coordinator_socket is not None:
             self.coordinator_conn_handler.RUNNING = False
             self.coordinator_socket.close()
-            self.conn_coordinator_thread.join()
+            if threading.current_thread() != self.conn_coordinator_thread:
+                self.conn_coordinator_thread.join()
 
         if self.outbound_worker_socket is not None:
             self.outbound_worker_conn_handler.RUNNING = False
             self.outbound_worker_socket.close()
-            self.outbound_conn_worker_thread.join()
+            if threading.current_thread() != self.outbound_conn_worker_thread:
+                self.outbound_conn_worker_thread.join()
 
         if self.inbound_worker_socket is not None:
             self.inbound_worker_conn_handler.RUNNING = False
             self.inbound_worker_socket.close()
-            self.inbound_conn_worker_thread.join()
+            if threading.current_thread() != self.inbound_conn_worker_thread:
+                self.inbound_conn_worker_thread.join()
+
         sys.exit(0)
 
 
