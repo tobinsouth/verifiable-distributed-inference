@@ -33,7 +33,7 @@ class FileManager:
     def get_settings_path(self) -> str:
         return f"{self.storage_dir}/shard_{self.shard_id}/{self.model_id}_settings.json"
 
-    # Returns the ezkl settings.json path. Optionally, a custom storage_dir can be passed.
+    # Returns the ezkl settings.json path
     @staticmethod
     def get_settings_path_static(shard_id: int, model_id: str, storage_dir: str) -> str:
         os.makedirs(f"{storage_dir}/shard_{shard_id}", exist_ok=True)
@@ -42,6 +42,12 @@ class FileManager:
     # Returns the calibration data path
     def get_calibration_data_path(self) -> str:
         return f"{self.storage_dir}/shard_{self.shard_id}/{self.model_id}_calibration_data.json"
+
+    # Returns the calibration data path
+    @staticmethod
+    def get_calibration_data_path_static(shard_id: int, model_id: str, storage_dir: str) -> str:
+        os.makedirs(f"{storage_dir}/shard_{shard_id}", exist_ok=True)
+        return f"{storage_dir}/shard_{shard_id}/{model_id}_calibration_data.json"
 
     # Returns the compiled circuit (of onnx model) path
     def get_compiled_circuit_path(self) -> str:

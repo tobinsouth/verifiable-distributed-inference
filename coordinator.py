@@ -16,7 +16,7 @@ from modules.model_proving import Prover
 from modules.file_manager import FileManager
 from torch import nn
 from utils.helpers import conditional_print, decode_b64_to_np_array, encode_np_array_to_b64
-from config import STORAGE_DIR, VERBOSE
+from config import STORAGE_DIR, VERBOSE, NUM_CALIBRATION_DATAPOINTS, DEVICE
 
 
 class Coordinator:
@@ -68,6 +68,33 @@ class Coordinator:
 
         conditional_print("[PREPROCESSING] Saved model (shards)", VERBOSE)
 
+        # Generate calibration data
+        dummy_values = [trainer.get_dummy_input() for _ in range(NUM_CALIBRATION_DATAPOINTS)]
+        model_shards = model_processor.shards
+
+        for i in range(num_shards):
+            cal_data = dict(
+                input_data=[]
+            )
+            file_path: str = FileManager.get_calibration_data_path_static(
+                shard_id=i,
+                model_id=self.model_name,
+                storage_dir=self.storage_dir
+            )
+
+            for j in range(len(dummy_values)):
+                try:
+                    np_arr = dummy_values[j].to(DEVICE).numpy().astype(np.float32)
+                except Exception:
+                    np_arr = dummy_values[j].to(DEVICE).detach().numpy().astype(np.float32)
+                # Add np arrays to dict
+                cal_data['input_data'].append(np_arr.flatten().tolist())
+                # Update tensors
+                dummy_values[j] = model_shards[i](dummy_values[j])
+
+            with open(file_path, 'w') as f:
+                json.dump(cal_data, f)
+
         connection_counter: int = 0
 
         conditional_print("[LOGIC] Starting connection loop", VERBOSE)
@@ -110,10 +137,11 @@ class Coordinator:
             print('[LOGIC] Setup completed. Inference runs can now be served.')
 
             if self.benchmarking_mode:
+                handler_list: list[CoordinatorConnectionHandler] = list(self.handlers.values())
                 # The first node will receive all inference requests from the coordinator
-                first_node_handler: CoordinatorConnectionHandler = list(self.handlers.values())[0]
+                first_node_handler: CoordinatorConnectionHandler = handler_list[0]
 
-                # second_node_handler: CoordinatorConnectionHandler = list(self.handlers.values())[1]
+                # Get random input to send to first worker
                 np_arr = trainer.get_dummy_input().cpu().numpy()
                 encoded_np_arr = encode_np_array_to_b64(np_arr)
                 message: bytes = b'run_inference|' + encoded_np_arr
@@ -121,15 +149,18 @@ class Coordinator:
 
                 time.sleep(10)
 
-                # TODO: read from the witness_manager and trigger getting all of the proofs.
-                #  (it should only be one per node)
-                first_node_handler.send(f'get_proof|1ca6dd0091304ca9b985b615a4998eaa_0')
+                # Get all proofs
+                for witness in self.witness_manager.witness_to_shard_map.keys():
+                    shard_id: int = self.witness_manager.witness_to_shard_map[witness]
+                    connection_handler: CoordinatorConnectionHandler = handler_list[shard_id]
+                    connection_handler.send(f'get_proof|{witness}')
 
-                # Triggers all
-                for handler in list(self.handlers.values()):
+                # Triggers all workers to save their benchmarking results
+                for handler in handler_list:
                     handler.send('save_benchmarking_results')
                     time.sleep(10)
-                    # After nodes have been saved, trigger shutdown (this is important, as it properly frees up ports etc.)
+                    # After nodes have been saved, trigger shutdown
+                    # (this is important, as it properly frees up ports etc.)
                     handler.send('shutdown')
 
         except KeyboardInterrupt:
@@ -198,6 +229,7 @@ class Coordinator:
     # Adds 1 to the number of ready nodes.
     def register_ready_node(self) -> None:
         self.num_ready_nodes += 1
+
 
 
 if __name__ == "__main__":

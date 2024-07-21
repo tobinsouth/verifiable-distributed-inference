@@ -31,6 +31,7 @@ DEVICE = "cpu"
 # Toggles whether CLI or Py bindings are used
 USE_EZKL_CLI = True
 # We want the input and outputs to be "publicly" visible in the
+NUM_CALIBRATION_DATAPOINTS = 10
 INPUT_VISIBILITY: str = "public"
 OUTPUT_VISIBILITY: str = "public"
 PARAM_VISIBILITY: str = "hashed"
