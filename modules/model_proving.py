@@ -8,12 +8,7 @@ import json
 
 from modules.file_manager import FileManager
 from utils.helpers import conditional_print
-
-# Toggles
-# Enables verbose prints that log every step in the process
-VERBOSE: bool = True
-# Enables the use of ezkl's cli bindings instead of the python bindings
-USE_EZKL_CLI: bool = False
+from config import VERBOSE, USE_EZKL_CLI
 
 
 class Prover:

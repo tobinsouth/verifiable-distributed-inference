@@ -21,7 +21,15 @@ BENCHMARKING_RESULTS_SUB_DIR: str = "/benchmark_results"
 # Toggle for debug level prints
 VERBOSE: bool = True
 
+# Buffer size for socket message receiving
+BUF_SIZE = 4096
+
+#PyTorch configuration
+DEVICE = "cpu"
+
 # ezkl configuration
+# Toggles whether CLI or Py bindings are used
+USE_EZKL_CLI = True
 # We want the input and outputs to be "publicly" visible in the
 INPUT_VISIBILITY: str = "public"
 OUTPUT_VISIBILITY: str = "public"

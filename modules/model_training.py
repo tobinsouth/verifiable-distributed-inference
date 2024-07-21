@@ -5,16 +5,13 @@ from torch import nn
 from torch.utils.data import DataLoader
 from torchvision import datasets
 from torchvision.transforms import ToTensor
+from config import VERBOSE, DEVICE
 
 # Constants
-# Define constants
-DEVICE = 'cpu'
-
 EPOCHS = 1
 BATCH_SIZE = 64
 DATA_DIR = "./data"
 PROOF_DIR = "./proof"
-VERBOSE = False
 
 
 # Define Models

@@ -4,8 +4,7 @@ import os
 from torch import nn
 import torch
 from utils.helpers import conditional_print
-
-VERBOSE = True
+from config import VERBOSE
 
 
 class Processor:

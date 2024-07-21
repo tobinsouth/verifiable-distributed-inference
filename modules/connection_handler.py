@@ -2,11 +2,8 @@ import time
 from socket import socket
 from typing import Tuple
 from abc import ABC, abstractmethod
-import numpy as np
-from utils.helpers import decode_b64_to_np_array, conditional_print
-
-BUF_SIZE = 4096
-VERBOSE = True
+from utils.helpers import conditional_print
+from config import VERBOSE, BUF_SIZE
 
 
 # Makes this class abstract.
