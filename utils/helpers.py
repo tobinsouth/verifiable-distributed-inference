@@ -24,3 +24,15 @@ def encode_np_array_to_b64(np_array: np.ndarray) -> bytes:
     return encoded_np_arr
 
 
+def rmse(y_pred, y_true):
+    y_pred = y_pred.astype(np.float32).flatten()
+    y_true = y_true.astype(np.float32).flatten()
+    return np.sqrt(np.mean(np.square(y_true - y_pred)))
+
+
+def rmspe(y_pred, y_true, epsilon=1e-10) -> float:
+    y_pred = y_pred.astype(np.float32).flatten()
+    y_true = y_true.astype(np.float32).flatten()
+
+    errors = (y_true - y_pred) / (y_true + epsilon)
+    return np.sqrt(np.mean(np.square(errors)))

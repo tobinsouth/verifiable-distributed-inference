@@ -23,23 +23,10 @@ from modules.model_processing import Processor
 from modules.model_training import Trainer, AVAILABLE_MODELS
 from modules.seed import set_seed
 from config import USE_EZKL_CLI, DEVICE
+from utils.helpers import rmse, rmspe
 
 STORAGE_DIR = './tmp'
 RESULTS_DIR = './results'
-
-def rmse(y_pred, y_true):
-    y_pred = y_pred.astype(np.float32).flatten()
-    y_true = y_true.astype(np.float32).flatten()
-    return np.sqrt(np.mean(np.square(y_true - y_pred)))
-
-
-def rmspe(y_pred, y_true, epsilon=1e-10) -> float:
-    y_pred = y_pred.astype(np.float32).flatten()
-    y_true = y_true.astype(np.float32).flatten()
-
-    errors = (y_true - y_pred) / (y_true + epsilon)
-    return np.sqrt(np.mean(np.square(errors)))
-
 
 async def setup(model_path: str,
                 settings_path: str,
