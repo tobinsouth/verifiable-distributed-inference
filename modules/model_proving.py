@@ -80,7 +80,7 @@ class Prover:
                                                      f'-O {self.file_manager.get_settings_path()} '
                                                      f'--input-visibility {self.py_run_args.input_visibility} '
                                                      f'--output-visibility {self.py_run_args.output_visibility} '
-                                                     f'--param-visibility {self.py_run_args.param_visibility} ')
+                                                     f'--param-visibility {self.py_run_args.param_visibility}')
                 if return_code_gen_settings != 0:
                     conditional_print(f"[ERROR] Unable to generate ezkl settings", VERBOSE)
 
@@ -88,7 +88,7 @@ class Prover:
                                                            f'-D {self.file_manager.get_calibration_data_path()} '
                                                            f'-M {self.file_manager.get_model_path()} '
                                                            f'--settings-path {self.file_manager.get_settings_path()} '
-                                                           f'--target {self.ezkl_optimization_goal} ')
+                                                           f'--target {self.ezkl_optimization_goal}')
                 if return_code_calibrate_settings != 0:
                     conditional_print(f"[ERROR] Unable to calibrate ezkl settings", VERBOSE)
             else:
@@ -157,7 +157,7 @@ class Prover:
                                           f'--compiled-circuit {self.file_manager.get_compiled_circuit_path()} '
                                           f'--vk-path {self.file_manager.get_vk_path()} '
                                           f'--pk-path {self.file_manager.get_pk_path()} '
-                                          f'--srs-path {self.file_manager.get_srs_path()} ')
+                                          f'--srs-path {self.file_manager.get_srs_path()}')
             if return_code_setup != 0:
                 conditional_print(f"[ERROR] Unable to complete final ezkl setup", VERBOSE)
         else:
@@ -184,9 +184,9 @@ class Prover:
         witness_path: str = self.file_manager.get_witness_path(witness_id)
         if USE_EZKL_CLI:
             return_code_witness = os.system(f'ezkl gen-witness '
-                                            f'-D {raw_witness_path} '
-                                            f'-M {self.file_manager.get_compiled_circuit_path()}'
-                                            f'-O {witness_path} ')
+                                            f'--data {raw_witness_path} '
+                                            f'--compiled-circuit {self.file_manager.get_compiled_circuit_path()} '
+                                            f'--output {witness_path}')
             file_exists: bool = os.path.isfile(witness_path)
             if (return_code_witness != 0) or not file_exists:
                 conditional_print(f"[ERROR] Unable to generate ezkl witness at {witness_path}", VERBOSE)
@@ -209,10 +209,10 @@ class Prover:
         proof_path: str = self.file_manager.get_proof_path(witness_id)
         if USE_EZKL_CLI:
             return_code_prove = os.system(f'ezkl prove '
-                                          f'--witness {self.file_manager.get_witness_path(witness_id)}'
-                                          f'--compiled-circuit {self.file_manager.get_compiled_circuit_path()}'
-                                          f'--pk-path {self.file_manager.get_pk_path()}'
-                                          f'--proof-path {proof_path}'
+                                          f'--witness {self.file_manager.get_witness_path(witness_id)} '
+                                          f'--compiled-circuit {self.file_manager.get_compiled_circuit_path()} '
+                                          f'--pk-path {self.file_manager.get_pk_path()} '
+                                          f'--proof-path {proof_path} '
                                           f'--srs-path {self.file_manager.get_srs_path()}')
             file_exists: bool = os.path.isfile(proof_path)
             if (return_code_prove != 0) or not file_exists:
