@@ -134,7 +134,6 @@ class Worker:
 
         except KeyboardInterrupt:
             self.shutdown()
-            sys.exit(0)
 
     def connect_to_coordinator(self):
         try:
@@ -345,6 +344,7 @@ class Worker:
             self.inbound_worker_conn_handler.RUNNING = False
             self.inbound_worker_socket.close()
             self.inbound_conn_worker_thread.join()
+        sys.exit(0)
 
 
 if __name__ == "__main__":
