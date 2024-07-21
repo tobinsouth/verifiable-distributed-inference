@@ -44,7 +44,7 @@ class Processor:
         os.makedirs(storage_dir, exist_ok=True)
         # If model wasn't sharded, save it as one file.
         if len(self.shards) <= 1:
-            model_path: str = f"{storage_dir}/{model_id}.onnx"
+            model_path: str = f"{storage_dir}/{model_id}_shard_0.onnx"
             self.shard_paths.append(model_path)
             sample_input_tensor = self.sample_input
             torch.onnx.export(

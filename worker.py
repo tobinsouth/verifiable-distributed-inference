@@ -129,6 +129,10 @@ class Worker:
                     self.outbound_conn_worker_thread.start()
 
                 conditional_print(f"[LOGIC] Connections between all nodes established.", VERBOSE)
+
+            while self.shard_id is None and self.model_id is None:
+                conditional_print(f'[LOGIC] IDs not set yet. Retrying in 5s', VERBOSE)
+                time.sleep(5)
             # ONLY after all connections have been created, do the ezkl setup!
             self.load_model()
             # Report to coordinator that ezkl setup has been completed

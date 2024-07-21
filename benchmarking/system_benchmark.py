@@ -23,11 +23,7 @@ def start_worker(host: str, port: int, coordinator_host: str, coordinator_port: 
     )
 
 
-def run_setup(num_workers: int, model_name: str, port_offset: int):
-    # This storage dir will be the directory in which all workers and coordinator will be placing files in for this run.
-    # customize this per run.
-    # THIS PATH IS RELATIVE TO THE ROOT DIRECTORY OF THE PROJECT
-    storage_dir: str = f'./benchmarking/tmp-system-benchmark/{model_name}-{num_workers}'
+def run_setup(num_workers: int, model_name: str, storage_dir: str, port_offset: int):
     # Coordinator params
     coordinator_host: str = '127.0.0.1'
     coordinator_port: int = 8000 + port_offset
@@ -103,9 +99,13 @@ if __name__ == "__main__":
     # temporary for testing purposes
     for num_workers in [1]:
         print(f"Running setup with {num_workers} workers")
+
+        storage_dir: str = f'./tmp-system-benchmark/{model_name}-{num_workers}'
+        os.makedirs(storage_dir, exist_ok=True)
         run_setup(
             num_workers=num_workers,
             model_name=model_name,
-            port_offset=port_offset_table[model_name]
+            port_offset=port_offset_table[model_name],
+            storage_dir=storage_dir
         )
         print(f"Setup with {num_workers} workers completed")
