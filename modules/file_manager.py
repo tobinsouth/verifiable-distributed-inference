@@ -41,7 +41,7 @@ class FileManager:
 
     # Returns the calibration data path
     def get_calibration_data_path(self) -> str:
-        return f"{self.storage_dir}/shard_{self.shard_id}/{self.model_id}_data.json"
+        return f"{self.storage_dir}/shard_{self.shard_id}/{self.model_id}_calibration_data.json"
 
     # Returns the compiled circuit (of onnx model) path
     def get_compiled_circuit_path(self) -> str:
