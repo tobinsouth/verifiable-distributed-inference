@@ -15,7 +15,7 @@ from modules.model_processing import Processor
 from modules.model_training import Trainer, AVAILABLE_MODELS
 from modules.model_proving import Prover
 from modules.file_manager import FileManager
-from utils.helpers import conditional_print, decode_b64_to_np_array, encode_np_array_to_b64, rmse
+from utils.helpers import conditional_print, decode_b64_to_np_array, encode_np_array_to_b64, save_dataframe
 from config import STORAGE_DIR, VERBOSE, NUM_CALIBRATION_DATAPOINTS, DEVICE
 
 
@@ -262,8 +262,14 @@ class Coordinator:
             return
 
         df_verification = pd.DataFrame(self.verification_data)
+
         data_dir: str = FileManager.get_benchmarking_results_dir_static(self.storage_dir)
-        df_verification.to_csv(f'{data_dir}/coordinator_verification_data.csv', index=False)
+        verification_file: str = f'{data_dir}/verification_data.csv'
+
+        save_dataframe(
+            file_path=verification_file,
+            df=df_verification
+        )
 
 
 if __name__ == "__main__":

@@ -1,4 +1,6 @@
+import os
 import numpy as np
+import pandas as pd
 import base64
 import io
 
@@ -36,3 +38,10 @@ def rmspe(y_pred, y_true, epsilon=1e-10) -> float:
 
     errors = (y_true - y_pred) / (y_true + epsilon)
     return np.sqrt(np.mean(np.square(errors)))
+
+
+def save_dataframe(file_path: str, df: pd.DataFrame) -> None:
+    if os.path.exists(file_path):
+        df.to_csv(file_path, index=False, mode='a', header=False)
+    else:
+        df.to_csv(file_path, index=False, mode='w', header=True)

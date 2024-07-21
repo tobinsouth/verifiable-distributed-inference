@@ -14,8 +14,9 @@ from typing import Tuple
 from modules.connection_handler import CoordinatorConnectionHandler, WorkerConnectionHandler
 from modules.model_proving import Prover
 from modules.file_manager import FileManager
-from utils.helpers import conditional_print, decode_b64_to_np_array, encode_np_array_to_b64
-from config import STORAGE_DIR, VERBOSE, INPUT_VISIBILITY, OUTPUT_VISIBILITY, PARAM_VISIBILITY, OPTIMIZATION_GOAL, INPUT_SCALE, PARAM_SCALE
+from utils.helpers import conditional_print, decode_b64_to_np_array, encode_np_array_to_b64, save_dataframe
+from config import STORAGE_DIR, VERBOSE, INPUT_VISIBILITY, OUTPUT_VISIBILITY, PARAM_VISIBILITY, OPTIMIZATION_GOAL, \
+    INPUT_SCALE, PARAM_SCALE
 
 
 class Worker:
@@ -183,7 +184,7 @@ class Worker:
             param_visibility=PARAM_VISIBILITY,
             ezkl_optimization_goal=OPTIMIZATION_GOAL,
             input_scale=INPUT_SCALE,  # Optional param, can be removed.
-            param_scale=PARAM_SCALE   # Optional param, can be removed
+            param_scale=PARAM_SCALE  # Optional param, can be removed
         )
 
     # Loads model (shard) so that inference can be made on model (shard)
@@ -223,6 +224,7 @@ class Worker:
             self.setup_data.append(
                 {
                     'shard_id': self.shard_id,
+                    'model_id': self.model_id,
                     'setup_time': difference,
                     'vk_size': vk_file_size,
                     'pk_size': pk_file_size
@@ -282,6 +284,7 @@ class Worker:
                 {
                     'witness_id': witness_id,
                     'shard_id': self.shard_id,
+                    'model_id': self.model_id,
                     'witness_generation_time': difference,
                     'witness_size': witness_file_size
                 }
@@ -332,6 +335,7 @@ class Worker:
                 {
                     'witness_id': witness_id,
                     'shard_id': self.shard_id,
+                    'model_id': self.model_id,
                     'proof_generation_time': difference,
                     'proof_size': file_size
                 }
@@ -348,10 +352,22 @@ class Worker:
         df_setup_times = pd.DataFrame(self.setup_data)
 
         data_dir: str = self.file_manager.get_benchmarking_results_dir()
+        witness_file: str = f'{data_dir}/witness_data.csv'
+        proving_file: str = f'{data_dir}/proving_data.csv'
+        setup_file: str = f'{data_dir}/setup_data.csv'
 
-        df_witness_times.to_csv(f'{data_dir}/{self.model_id}_{self.shard_id}_witness_data.csv', index=False)
-        df_proving_times.to_csv(f'{data_dir}/{self.model_id}_{self.shard_id}_proving_data.csv', index=False)
-        df_setup_times.to_csv(f'{data_dir}/{self.model_id}_{self.shard_id}_setup_data.csv', index=False)
+        save_dataframe(
+            file_path=witness_file,
+            df=df_witness_times
+        )
+        save_dataframe(
+            file_path=proving_file,
+            df=df_proving_times
+        )
+        save_dataframe(
+            file_path=setup_file,
+            df=df_setup_times
+        )
 
     # Triggers shutdown logic where connection handlers are stopped, sockets are closed and threads shutdown.
     def shutdown(self):
