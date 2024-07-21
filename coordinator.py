@@ -4,9 +4,10 @@ import socket
 import threading
 import time
 from typing import Tuple
-
 import numpy as np
+import pandas as pd
 import torch
+from torch import nn
 
 from modules.connection_handler import CoordinatorConnectionHandler
 from modules.witness_manager import WitnessManager
@@ -14,8 +15,7 @@ from modules.model_processing import Processor
 from modules.model_training import Trainer, AVAILABLE_MODELS
 from modules.model_proving import Prover
 from modules.file_manager import FileManager
-from torch import nn
-from utils.helpers import conditional_print, decode_b64_to_np_array, encode_np_array_to_b64
+from utils.helpers import conditional_print, decode_b64_to_np_array, encode_np_array_to_b64, rmse
 from config import STORAGE_DIR, VERBOSE, NUM_CALIBRATION_DATAPOINTS, DEVICE
 
 
@@ -26,6 +26,8 @@ class Coordinator:
                  model_name: str,
                  benchmarking_mode: bool = False,
                  storage_dir: str = STORAGE_DIR):
+        self.trainer: Trainer = None
+        self.model_processor: Processor = None
         self.connections: dict[str, threading.Thread] = {}
         self.handlers: dict[str, CoordinatorConnectionHandler] = {}
         self.connection_to_inbound_address: dict = {}
@@ -37,31 +39,32 @@ class Coordinator:
         self.model_name: str = model_name
         self.benchmarking_mode: bool = benchmarking_mode
         self.storage_dir: str = storage_dir
+        self.verification_data: list = []
 
     def run(self) -> None:
         self.open_socket()
-        trainer = Trainer(
+        self.trainer = Trainer(
             load_training_data=False,
             model_name=self.model_name
         )
 
-        model: nn.Module = trainer.model
+        model: nn.Module = self.trainer.model
 
         # Generate a dummy input tensor. Needed for the processing of the model.
-        dummy_input: torch.Tensor = trainer.get_dummy_input()
+        dummy_input: torch.Tensor = self.trainer.get_dummy_input()
 
         conditional_print("[PREPROCESSING] Loaded model", VERBOSE)
 
         # Process the model and turn it into shards.
-        model_processor = Processor(
+        self.model_processor = Processor(
             model=model,
             sample_input=dummy_input
         )
-        model_processor.shard(self.num_shards)
+        self.model_processor.shard(self.num_shards)
 
         conditional_print("[PREPROCESSING] Sharded model", VERBOSE)
 
-        model_processor.save(
+        self.model_processor.save(
             model_id=self.model_name,
             storage_dir=FileManager.get_model_storage_dir_static(self.storage_dir)
         )
@@ -69,8 +72,8 @@ class Coordinator:
         conditional_print("[PREPROCESSING] Saved model (shards)", VERBOSE)
 
         # Generate calibration data
-        dummy_values = [trainer.get_dummy_input() for _ in range(NUM_CALIBRATION_DATAPOINTS)]
-        model_shards = model_processor.shards
+        dummy_values = [self.trainer.get_dummy_input() for _ in range(NUM_CALIBRATION_DATAPOINTS)]
+        model_shards = self.model_processor.shards
 
         for i in range(num_shards):
             cal_data = dict(
@@ -142,7 +145,7 @@ class Coordinator:
                 first_node_handler: CoordinatorConnectionHandler = handler_list[0]
 
                 # Get random input to send to first worker
-                np_arr = trainer.get_dummy_input().cpu().numpy()
+                np_arr = self.trainer.get_dummy_input().cpu().numpy()
                 encoded_np_arr = encode_np_array_to_b64(np_arr)
                 message: bytes = b'run_inference|' + encoded_np_arr
                 first_node_handler.send_bytes(message)
@@ -162,6 +165,8 @@ class Coordinator:
                     # After nodes have been saved, trigger shutdown
                     # (this is important, as it properly frees up ports etc.)
                     handler.send('shutdown')
+
+                self.save_benchmarking_results()
 
         except KeyboardInterrupt:
             self.socket.close()
@@ -207,12 +212,32 @@ class Coordinator:
     def verify_proof(self, proof_path: str, shard_id: int, model_id: str) -> None:
         # Only the proof_path is passed, and the other two paths are derived, as they stay static
         # for all future proofs.
+
+        # Starts measuring time
+        start_time: float = 0
+        if self.benchmarking_mode:
+            start_time = time.perf_counter()
+
+        # Check if proof is a valid proof
         Prover.verify_proof(
             proof_path=proof_path,
             settings_path=FileManager.get_settings_path_static(shard_id, model_id, self.storage_dir),
             vk_path=FileManager.get_vk_path_static(shard_id, model_id, self.storage_dir),
             srs_path=FileManager.get_srs_path_static(shard_id, model_id, self.storage_dir)
         )
+
+        # Stops measuring time & logs time difference
+        end_time: float = 0
+        if self.benchmarking_mode:
+            end_time = time.perf_counter()
+            difference: float = end_time - start_time
+            self.verification_data.append(
+                {
+                    'shard_id': shard_id,
+                    'model_id': model_id,
+                    'verification_time': difference
+                }
+            )
 
     # Saves the final inference output to a file
     def save_final_inference_output(self, raw_output_data: bytes, run_id: int) -> None:
@@ -231,6 +256,14 @@ class Coordinator:
     def register_ready_node(self) -> None:
         self.num_ready_nodes += 1
 
+    # Persists logged benchmarking results
+    def save_benchmarking_results(self) -> None:
+        if not self.benchmarking_mode:
+            return
+
+        df_verification = pd.DataFrame(self.verification_data)
+        data_dir: str = FileManager.get_benchmarking_results_dir_static(self.storage_dir)
+        df_verification.to_csv(f'{data_dir}/coordinator_verification_data.csv', index=False)
 
 
 if __name__ == "__main__":

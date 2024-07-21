@@ -122,3 +122,8 @@ class FileManager:
     def get_benchmarking_results_dir(self) -> str:
         os.makedirs(f"{self.storage_dir}{BENCHMARKING_RESULTS_SUB_DIR}", exist_ok=True)
         return f"{self.storage_dir}{BENCHMARKING_RESULTS_SUB_DIR}"
+
+    @staticmethod
+    def get_benchmarking_results_dir_static(storage_dir: str) -> str:
+        os.makedirs(f"{storage_dir}{BENCHMARKING_RESULTS_SUB_DIR}", exist_ok=True)
+        return f"{storage_dir}{BENCHMARKING_RESULTS_SUB_DIR}"
