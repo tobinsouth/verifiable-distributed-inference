@@ -210,7 +210,8 @@ class Coordinator:
         Prover.verify_proof(
             proof_path=proof_path,
             settings_path=FileManager.get_settings_path_static(shard_id, model_id, self.storage_dir),
-            vk_path=FileManager.get_vk_path_static(shard_id, model_id, self.storage_dir)
+            vk_path=FileManager.get_vk_path_static(shard_id, model_id, self.storage_dir),
+            srs_path=FileManager.get_srs_path_static(shard_id, model_id, self.storage_dir)
         )
 
     # Saves the final inference output to a file

@@ -57,6 +57,12 @@ class FileManager:
     def get_srs_path(self) -> str:
         return f"{self.storage_dir}/shard_{self.shard_id}/{self.model_id}_kzg.srs"
 
+    # Returns the SRS file path
+    @staticmethod
+    def get_srs_path_static(shard_id: int, model_id: str, storage_dir: str) -> str:
+        os.makedirs(f"{storage_dir}/shard_{shard_id}", exist_ok=True)
+        return f"{storage_dir}/shard_{shard_id}/{model_id}_kzg.srs"
+
     # Returns the verification key path
     def get_vk_path(self) -> str:
         return f"{self.storage_dir}/shard_{self.shard_id}/{self.model_id}_vk.key"
