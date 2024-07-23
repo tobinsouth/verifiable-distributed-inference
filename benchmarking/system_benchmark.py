@@ -97,7 +97,7 @@ if __name__ == "__main__":
 
     # TODO: change back to [1, 2, 3, 4, 6, 12]
     # temporary for testing purposes
-    for num_workers in [1]:
+    for num_workers in [3]:
         print(f"Running setup with {num_workers} workers")
 
         storage_dir: str = f'./tmp-system-benchmark/{model_name}-{num_workers}'
