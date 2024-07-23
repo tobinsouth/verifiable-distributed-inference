@@ -107,7 +107,7 @@ class Coordinator:
                 socket_connection, socket_address = self.socket.accept()
                 conditional_print(f"[LOGIC] Accepted connection from: {socket_address}", VERBOSE)
                 if connection_counter > self.num_shards - 1:
-                    print(f"[ISSUE] There are more connections than available shards: {self.num_shards} shards are taken."
+                    print(f"[ERROR] There are more connections than available shards: {self.num_shards} shards are taken."
                           f" Shutting down connection.")
                     socket_connection.close()
                     continue
@@ -250,7 +250,7 @@ class Coordinator:
         with open(file_path, 'w') as f:
             json.dump(raw_output_file_data, f)
             f.close()
-        conditional_print(f'Wrote final inference output to: {file_path}', VERBOSE)
+        conditional_print(f'[LOGIC] Wrote final inference output to: {file_path}', VERBOSE)
 
     # Adds 1 to the number of ready nodes.
     def register_ready_node(self) -> None:
