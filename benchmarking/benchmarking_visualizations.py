@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
+import scienceplots
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 
@@ -39,38 +40,42 @@ def visualize_accuracy_old_1(data_path: str):
     plt.show()
 
 
-def visualize_accuracy_old_2(data_path: str):
+def visualize_accuracy(data_path: str):
     df = pd.read_csv(data_path)
+    df = df[df.model != 'attention']
+    df['model'] = df['model'].replace({'mlp': 'MLP', 'cnn': 'CNN'})
+
+    plt.style.use('science')
+
+    plt.figure(figsize=(11.69, 5.5), dpi=300)
 
     sns.scatterplot(
         data=df,
         x='num_nodes',
         y='accuracy_loss',
         hue='model',
-        style='model',
-        s=120
+        # style='model',
+        s=250
     )
-    # sns.lineplot(
-    #     data=df,
-    #     x='num_nodes',
-    #     y='reference_accuracy_loss',
-    #     c='grey'
-    # )
 
-    plt.xlabel('No. of nodes/shards', fontsize=10)
-    plt.ylabel('Cumulative RMSE Loss', fontsize=10)
-    plt.title('Accuracy Loss', fontsize=12)
+    plt.xlabel('No. of nodes/shards', fontsize=20)
+    plt.ylabel('Cumulative RMSE Loss', fontsize=20)
+    plt.title('Accuracy Loss', fontsize=24)
+
+    plt.tick_params(axis='both', which='major', labelsize=16)
 
     plt.xticks(df['num_nodes'].unique())
     plt.ylim(0, df['accuracy_loss'].max() + 0.00005)
 
+    plt.legend(title='Model', title_fontsize=16, prop={'size': 16})
+
     plt.tight_layout()
-    # plt.savefig('./plots/accuracy_plot.pdf', format='pdf')
-    plt.savefig('./plots/accuracy_plot.png', format='png')
+    plt.savefig('./plots/accuracy-plot.pdf', format='pdf')
+    # plt.savefig('./plots/accuracy-plot.png', format='png')
     plt.show()
 
 
-def vis_accuracy(data_path: str):
+def visualize_accuracy_alt(data_path: str):
     outlier_bound = 0.05
 
     df = pd.read_csv(data_path)
@@ -143,4 +148,4 @@ def vis_accuracy(data_path: str):
 
 
 if __name__ == '__main__':
-    vis_accuracy('results/final/accuracy_benchmark_all')
+    visualize_accuracy('results/final/accuracy_benchmark_all.csv')
