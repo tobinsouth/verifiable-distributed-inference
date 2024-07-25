@@ -160,8 +160,6 @@ class Coordinator:
 
                 while set(self.witness_manager.verified_witnesses) != set(all_witnesses):
                     conditional_print('Still waiting for all proofs to be received. Retrying in 10s!', VERBOSE)
-                    print(set(self.witness_manager.verified_witnesses))
-                    print(set(all_witnesses))
                     time.sleep(10)
 
                 # Triggers all workers to save their benchmarking results

@@ -191,7 +191,7 @@ class Prover:
             if (return_code_witness != 0) or not file_exists:
                 conditional_print(f"[ERROR] Unable to generate ezkl witness at {witness_path}", VERBOSE)
             else:
-                conditional_print(f'[LOGIC] Witness successfully generated at {witness_path}', VERBOSE)
+                conditional_print(f'[PROVING] Witness successfully generated at {witness_path}', VERBOSE)
         else:
             witness_result = await ezkl.gen_witness(
                 data=raw_witness_path,
@@ -202,7 +202,7 @@ class Prover:
             if not witness_result or not file_exists:
                 conditional_print(f"[ERROR] Unable to generate ezkl witness at {witness_path}", VERBOSE)
             else:
-                conditional_print(f'[LOGIC] Witness successfully generated at {witness_path}', VERBOSE)
+                conditional_print(f'[PROVING] Witness successfully generated at {witness_path}', VERBOSE)
 
     # Generates ezkl proof given a previously generated witness file, compiled circuit, etc.
     def generate_proof_for_witness(self, witness_id: str) -> None:
@@ -219,7 +219,7 @@ class Prover:
                 conditional_print(f"[ERROR] Unable to generate ezkl proof for witness {witness_id} at {proof_path}",
                                   VERBOSE)
             else:
-                conditional_print(f'[LOGIC] Proof successfully generated at {proof_path}', VERBOSE)
+                conditional_print(f'[PROVING] Proof successfully generated at {proof_path}', VERBOSE)
         else:
             prove_result: bool = ezkl.prove(
                 witness=self.file_manager.get_witness_path(witness_id),
@@ -233,7 +233,7 @@ class Prover:
                 conditional_print(f"[ERROR] Unable to generate ezkl proof for witness {witness_id} at {proof_path}",
                                   VERBOSE)
             else:
-                conditional_print(f'[LOGIC] Proof successfully generated at {proof_path}', VERBOSE)
+                conditional_print(f'[PROVING] Proof successfully generated at {proof_path}', VERBOSE)
 
     # Verifies ezkl proof.
     @staticmethod
@@ -246,9 +246,9 @@ class Prover:
                                            f'--vk-path {vk_path} '
                                            f'--srs-path {srs_path}')
             if return_code_verify != 0:
-                conditional_print(f'Proof at {proof_path} NOT valid', VERBOSE)
+                conditional_print(f'[PROVING] Proof at {proof_path} NOT valid', VERBOSE)
             else:
-                conditional_print(f'Proof at {proof_path} valid', VERBOSE)
+                conditional_print(f'[PROVING] Proof at {proof_path} valid', VERBOSE)
         else:
             res = ezkl.verify(
                 proof_path=proof_path,
@@ -256,9 +256,9 @@ class Prover:
                 vk_path=vk_path
             )
             if not res:
-                conditional_print(f'Proof at {proof_path} NOT valid', VERBOSE)
+                conditional_print(f'[PROVING] Proof at {proof_path} NOT valid', VERBOSE)
             else:
-                conditional_print(f'Proof at {proof_path} valid', VERBOSE)
+                conditional_print(f'[PROVING] Proof at {proof_path} valid', VERBOSE)
 
     """ OUTDATED CODE:
     def old_generate_proof(self, shard_id: int = None, previous_shard_output=None):
