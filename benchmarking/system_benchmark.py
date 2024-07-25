@@ -95,9 +95,7 @@ if __name__ == "__main__":
     for i, model_name_ in enumerate(AVAILABLE_MODELS):
         port_offset_table[model_name_] = i * 1000
 
-    # TODO: change back to [1, 2, 3, 4, 6, 12]
-    # temporary for testing purposes
-    for num_workers in [3]:
+    for num_workers in [1, 2, 3, 4, 6, 12]:
         print(f"Running setup with {num_workers} workers")
 
         storage_dir: str = f'./tmp-system-benchmark/{model_name}-{num_workers}'
