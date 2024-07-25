@@ -111,8 +111,11 @@ if __name__ == "__main__":
     for i, model_name_ in enumerate(AVAILABLE_MODELS):
         port_offset_table[model_name_] = i * 1000
 
-    for num_workers in num_node_list:
+    for idx, num_workers in enumerate(num_node_list):
         print(f"Running setup with {num_workers} workers")
+
+        # This makes sure the coordinator and workers never spawn on the same port
+        additional_offset: int = sum(num_node_list[:idx + 1])
 
         storage_dir: str = f'./tmp-system-benchmark/{model_name}-{num_workers}'
         os.makedirs(storage_dir, exist_ok=True)

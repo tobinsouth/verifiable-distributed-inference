@@ -183,9 +183,13 @@ class Coordinator:
                 thread.join()
 
     def open_socket(self) -> None:
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
-        self.socket.bind(address)
-        self.socket.listen()
+        try:
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
+            self.socket.bind(address)
+            self.socket.listen()
+        except Exception as e:
+            print(e)
+
 
     # Intermediate function that adds a witness_id to the witness_manager.
     def store_witness(self, witness_id: str, shard_id: int) -> None:
