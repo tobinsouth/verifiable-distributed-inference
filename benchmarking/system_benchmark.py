@@ -84,7 +84,7 @@ if __name__ == "__main__":
 
     if len(sys.argv) < 2:
         print("Invalid usage!")
-        print(f'Usage: system_benchmark <model>')
+        print(f'Usage: system_benchmark <model> [num_shards]')
         print(f'Available models are: {", ".join(AVAILABLE_MODELS)}')
         sys.exit(1)
 
@@ -93,13 +93,25 @@ if __name__ == "__main__":
         print(f'Incorrect model value! Available models are: {", ".join(AVAILABLE_MODELS)}')
         sys.exit(1)
 
+    num_node_list: list[int] = []
+    default_num_node_list: list[int] = [1, 2, 3, 4, 6, 12]
+    if len(sys.argv) == 3:
+        num_nodes = int(sys.argv[2])
+        if num_nodes not in default_num_node_list:
+            print(f'Invalid value for num_nodes: {num_nodes} (must be between any one of: {default_num_node_list})')
+            sys.exit(1)
+        else:
+            num_node_list.append(num_nodes)
+    else:
+        num_node_list = default_num_node_list
+
     # We need this port offset so that all three model benchmarks can run concurrently and don't block the
     # ports for each other.
     port_offset_table = {}
     for i, model_name_ in enumerate(AVAILABLE_MODELS):
         port_offset_table[model_name_] = i * 1000
 
-    for num_workers in [1, 2, 3, 4, 6, 12]:
+    for num_workers in num_node_list:
         print(f"Running setup with {num_workers} workers")
 
         storage_dir: str = f'./tmp-system-benchmark/{model_name}-{num_workers}'
