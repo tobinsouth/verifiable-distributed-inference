@@ -122,7 +122,7 @@ if __name__ == "__main__":
         run_setup(
             num_workers=num_workers,
             model_name=model_name,
-            port_offset=port_offset_table[model_name],
+            port_offset=port_offset_table[model_name] + additional_offset,
             storage_dir=storage_dir
         )
         print(f"Setup with {num_workers} workers completed")
