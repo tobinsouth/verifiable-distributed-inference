@@ -165,6 +165,7 @@ class Coordinator:
                     # After nodes have been saved, trigger shutdown
                     # (this is important, as it properly frees up ports etc.)
                     handler.send('shutdown')
+                    time.sleep(10)
 
                 self.save_benchmarking_results()
 
