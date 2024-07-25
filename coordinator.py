@@ -247,7 +247,8 @@ class Coordinator:
                 }
             )
 
-        tokens = proof_path.split('_proof')
+        tokens = proof_path.split('/')
+        tokens = tokens[-1].split('_proof')
         witness_id_of_proof: str = tokens[0]
         self.witness_manager.verified_witnesses.append(witness_id_of_proof)
 
