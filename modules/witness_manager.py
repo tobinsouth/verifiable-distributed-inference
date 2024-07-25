@@ -4,6 +4,7 @@ class WitnessManager:
         self.shard_to_witnesses_map: dict[int, list[str]] = {}
         self.witness_to_shard_map: dict[str, int] = {}
         self.run_to_witnesses_map: dict[int, list[str]] = {}
+        self.verified_witnesses: list[str] = []
 
     # Adds witness_id, shard_id, run_id to the relevant datastructures.
     def add_witness(self, witness_id: str, shard_id: int) -> None:

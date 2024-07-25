@@ -102,7 +102,6 @@ class Coordinator:
 
         conditional_print("[LOGIC] Starting connection loop", VERBOSE)
         try:
-
             while connection_counter < self.num_shards:
                 socket_connection, socket_address = self.socket.accept()
                 conditional_print(f"[LOGIC] Accepted connection from: {socket_address}", VERBOSE)
@@ -152,11 +151,16 @@ class Coordinator:
 
                 time.sleep(10)
 
+                all_witnesses: list = list(self.witness_manager.witness_to_shard_map.keys())
                 # Get all proofs
-                for witness in self.witness_manager.witness_to_shard_map.keys():
+                for witness in all_witnesses:
                     shard_id: int = self.witness_manager.witness_to_shard_map[witness]
                     connection_handler: CoordinatorConnectionHandler = handler_list[shard_id]
                     connection_handler.send(f'get_proof|{witness}')
+
+                while set(self.witness_manager.verified_witnesses) != set(all_witnesses):
+                    conditional_print('Still waiting for all proofs to be received. Retrying in 10s!', VERBOSE)
+                    time.sleep(10)
 
                 # Triggers all workers to save their benchmarking results
                 for handler in handler_list:
@@ -168,6 +172,7 @@ class Coordinator:
                     time.sleep(10)
 
                 self.save_benchmarking_results()
+                self.socket.close()
 
         except KeyboardInterrupt:
             self.socket.close()
@@ -239,6 +244,11 @@ class Coordinator:
                     'verification_time': difference
                 }
             )
+
+        tokens = proof_path.split('_proof')
+        witness_id_of_proof: str = tokens[0]
+        self.witness_manager.verified_witnesses.append(witness_id_of_proof)
+
 
     # Saves the final inference output to a file
     def save_final_inference_output(self, raw_output_data: bytes, run_id: int) -> None:
