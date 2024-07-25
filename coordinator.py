@@ -172,8 +172,6 @@ class Coordinator:
                     time.sleep(10)
 
                 self.save_benchmarking_results()
-                self.socket.close()
-
         except KeyboardInterrupt:
             self.socket.close()
             for thread in self.connections.values():
