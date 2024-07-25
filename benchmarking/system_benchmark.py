@@ -12,14 +12,18 @@ from modules.model_training import AVAILABLE_MODELS
 
 def start_coordinator(host: str, port: int, num_shards: int, model_name: str, storage_dir: str):
     return subprocess.Popen(
-        ['python', '../coordinator.py', host, str(port), str(num_shards), model_name, 'true', storage_dir]
+        ['python', '../coordinator.py', host, str(port), str(num_shards), model_name, 'true', storage_dir],
+        stdout=sys.stdout,
+        stderr=sys.stderr
     )
 
 
 def start_worker(host: str, port: int, coordinator_host: str, coordinator_port: int, node_role: str, storage_dir: str):
     return subprocess.Popen(
         ['python', '../worker.py', host, str(port), coordinator_host, str(coordinator_port), node_role, 'true',
-         storage_dir]
+         storage_dir],
+        stdout=sys.stdout,
+        stderr=sys.stderr
     )
 
 
@@ -95,7 +99,7 @@ if __name__ == "__main__":
     for i, model_name_ in enumerate(AVAILABLE_MODELS):
         port_offset_table[model_name_] = i * 1000
 
-    for num_workers in [1, 2, 3, 4, 6, 12]:
+    for num_workers in [1]:
         print(f"Running setup with {num_workers} workers")
 
         storage_dir: str = f'./tmp-system-benchmark/{model_name}-{num_workers}'
