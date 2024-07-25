@@ -375,22 +375,26 @@ class Worker:
 
     # Triggers shutdown logic where connection handlers are stopped, sockets are closed and threads shutdown.
     def shutdown(self):
+        conditional_print('[LOGIC] Starting shutdown process')
         if self.coordinator_socket is not None:
             self.coordinator_conn_handler.RUNNING = False
             self.coordinator_socket.close()
             if threading.current_thread() != self.conn_coordinator_thread:
+                conditional_print('[LOGIC] Joining coordinator thread')
                 self.conn_coordinator_thread.join()
 
         if self.outbound_worker_socket is not None:
             self.outbound_worker_conn_handler.RUNNING = False
             self.outbound_worker_socket.close()
             if threading.current_thread() != self.outbound_conn_worker_thread:
+                conditional_print('[LOGIC] Joining outbound worker thread')
                 self.outbound_conn_worker_thread.join()
 
         if self.inbound_worker_socket is not None:
             self.inbound_worker_conn_handler.RUNNING = False
             self.inbound_worker_socket.close()
             if threading.current_thread() != self.inbound_conn_worker_thread:
+                conditional_print('[LOGIC] Joining inbound worker thread')
                 self.inbound_conn_worker_thread.join()
 
         sys.exit(0)
