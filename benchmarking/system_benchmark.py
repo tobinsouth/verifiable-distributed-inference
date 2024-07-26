@@ -42,7 +42,7 @@ def run_setup(num_workers: int, model_name: str, storage_dir: str, port_offset: 
     )
 
     # Wait for coordinator to initialize
-    time.sleep(10)
+    time.sleep(10 if model_name == 'mlp' else 30)
 
     # Worker setup
     worker_processes = []
@@ -70,7 +70,7 @@ def run_setup(num_workers: int, model_name: str, storage_dir: str, port_offset: 
         )
 
         # Wait for worker `i` to initialize
-        time.sleep(10)
+        time.sleep(10 if model_name == 'mlp' else 30)
 
     # Wait for processes to complete
     coordinator_process.wait()
