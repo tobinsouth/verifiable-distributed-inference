@@ -240,7 +240,7 @@ def visualize_vk_and_pk_sizes(data_path: str, save_pdf: bool = False):
 
     plt.style.use('science')
 
-    formatter = FuncFormatter(lambda x, pos: '%1.0fM' % (x * 1e-6))
+    formatter = FuncFormatter(lambda x, pos: '%1.1fG' % (x * 1e-9))
 
     plt.figure(figsize=(11.69, 5.5), dpi=300)
 
