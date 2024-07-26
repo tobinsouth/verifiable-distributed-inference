@@ -133,8 +133,8 @@ class Coordinator:
             # Loops until all nodes have sent a ready message
             while self.num_ready_nodes != self.num_shards:
                 conditional_print(f'[LOGIC] Not all nodes ready to process inference request(s). '
-                                  f'Retrying in 5s.', VERBOSE)
-                time.sleep(5)
+                                  f'Retrying in 60s.', VERBOSE)
+                time.sleep(60)
 
             print('[LOGIC] Setup completed. Inference runs can now be served.')
 
@@ -159,8 +159,8 @@ class Coordinator:
                     connection_handler.send(f'get_proof|{witness}')
 
                 while set(self.witness_manager.verified_witnesses) != set(all_witnesses):
-                    conditional_print('Still waiting for all proofs to be received. Retrying in 10s!', VERBOSE)
-                    time.sleep(10)
+                    conditional_print('[LOGIC] Still waiting for all proofs to be received. Retrying in 60s!', VERBOSE)
+                    time.sleep(60)
 
                 # Triggers all workers to save their benchmarking results
                 for handler in handler_list:
