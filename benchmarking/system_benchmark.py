@@ -117,7 +117,7 @@ if __name__ == "__main__":
         print(f"Running setup with {num_workers} workers")
 
         # This makes sure the coordinator and workers never spawn on the same port
-        additional_offset: int = sum(num_node_list[:idx + 1])
+        additional_offset: int = 10 * num_workers
 
         storage_dir: str = f'./tmp-system-benchmark/{model_name}-{num_workers}'
         os.makedirs(storage_dir, exist_ok=True)
