@@ -201,19 +201,46 @@ class TestingModel(nn.Module):
     model_dimensions = [
         (1, 10),
         (1, 20),
+        (1, 20),
+        (1, 20),
+        (1, 20),
+        (1, 20),
+        (1, 20),
+        (1, 20),
+        (1, 20),
+        (1, 20),
+        (1, 20),
         (1, 20)
     ]
 
     def __init__(self):
         super().__init__()
         self.linear1 = nn.Linear(10, 20)
-        self.relu1 = nn.ReLU()
-        self.linear2 = nn.Linear(20, 1)
+        self.linear2 = nn.Linear(20, 20)
+        self.linear3 = nn.Linear(20, 20)
+        self.linear4 = nn.Linear(20, 20)
+        self.linear5 = nn.Linear(20, 20)
+        self.linear6 = nn.Linear(20, 20)
+        self.linear7 = nn.Linear(20, 20)
+        self.linear8 = nn.Linear(20, 20)
+        self.linear9 = nn.Linear(20, 20)
+        self.linear10 = nn.Linear(20, 20)
+        self.linear11 = nn.Linear(20, 20)
+        self.linear12 = nn.Linear(20, 1)
 
     def forward(self, x):
         x = self.linear1(x)
-        x = self.relu1(x)
         x = self.linear2(x)
+        x = self.linear3(x)
+        x = self.linear4(x)
+        x = self.linear5(x)
+        x = self.linear6(x)
+        x = self.linear7(x)
+        x = self.linear8(x)
+        x = self.linear9(x)
+        x = self.linear10(x)
+        x = self.linear11(x)
+        x = self.linear12(x)
         return x
 
 
