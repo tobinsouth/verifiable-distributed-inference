@@ -254,7 +254,7 @@ def visualize_vk_and_pk_sizes(data_path: str, save_pdf: bool = False):
     )
 
     plt.xlabel('No. of nodes/shards', fontsize=20)
-    plt.ylabel('Artifact Size (B)', fontsize=20)
+    plt.ylabel('Cumulative Artifact Size (B)', fontsize=20)
     plt.title('Verification and Proving Key Sizes', fontsize=24)
 
     plt.tick_params(axis='both', which='major', labelsize=16)
@@ -309,7 +309,7 @@ def visualize_proof_and_witness_sizes(data_path: str, save_pdf: bool = False):
     )
 
     plt.xlabel('No. of nodes/shards', fontsize=20)
-    plt.ylabel('Artifact size (B)', fontsize=20)
+    plt.ylabel('Cumulative Artifact size (B)', fontsize=20)
     plt.title('Proof and Witness Sizes', fontsize=24)
 
     plt.tick_params(axis='both', which='major', labelsize=16)
