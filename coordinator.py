@@ -53,7 +53,7 @@ class Coordinator:
         # Generate a dummy input tensor. Needed for the processing of the model.
         dummy_input: torch.Tensor = self.trainer.get_dummy_input()
 
-        conditional_print("[PREPROCESSING] Loaded model", VERBOSE)
+        conditional_print(f"[PREPROCESSING] Loaded model {self.model_name}", VERBOSE)
 
         # Process the model and turn it into shards.
         self.model_processor = Processor(

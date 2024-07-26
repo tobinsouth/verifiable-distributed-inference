@@ -11,6 +11,7 @@ from modules.model_training import AVAILABLE_MODELS
 
 
 def start_coordinator(host: str, port: int, num_shards: int, model_name: str, storage_dir: str):
+    print(f'Spawning coordinator on {host}:{port}')
     return subprocess.Popen(
         ['python', '../coordinator.py', host, str(port), str(num_shards), model_name, 'true', storage_dir],
         stdout=sys.stdout,
@@ -19,6 +20,7 @@ def start_coordinator(host: str, port: int, num_shards: int, model_name: str, st
 
 
 def start_worker(host: str, port: int, coordinator_host: str, coordinator_port: int, node_role: str, storage_dir: str):
+    print(f'Spawning worker on {host}:{port}')
     return subprocess.Popen(
         ['python', '../worker.py', host, str(port), coordinator_host, str(coordinator_port), node_role, 'true',
          storage_dir],
