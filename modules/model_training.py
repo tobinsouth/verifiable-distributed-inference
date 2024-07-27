@@ -264,8 +264,6 @@ class Trainer:
             self.model = CNNModel().to(DEVICE)
         elif model_name == AttentionModel.name:
             self.model = AttentionModel().to(DEVICE)
-        elif model_name == TestingModel.name:
-            self.model = TestingModel().to(DEVICE)
         else:
             print(f'Invalid model name provided (options: {", ".join(AVAILABLE_MODELS)}), '
                   f'reverting to {MLPModel.name}')
