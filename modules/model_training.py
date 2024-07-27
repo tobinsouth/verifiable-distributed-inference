@@ -246,9 +246,9 @@ class AttentionModel(nn.Module):
 
 AVAILABLE_MODELS = [
     MLPModel.name,
-    MLP2Model.name,
     CNNModel.name,
-    AttentionModel.name
+    AttentionModel.name,
+    MLP2Model.name
 ]
 
 
