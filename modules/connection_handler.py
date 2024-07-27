@@ -223,7 +223,16 @@ class CoordinatorConnectionHandler(ConnectionHandler):
                 message: str = ""
                 if connection_index < num_connections - 1:
                     subsequent_node_address: str = connection_keys[connection_index + 1]
-                    inbound_address: str = self.initiating_node.connection_to_inbound_address[subsequent_node_address]
+                    # Wait until the address is set!
+                    while True:
+                        try:
+                            inbound_address: str = self.initiating_node.connection_to_inbound_address[subsequent_node_address]
+                            break
+                        except Exception as e:
+                            print(e)
+                            conditional_print(f'Inbound address for {subsequent_node_address} not set yet. '
+                                              f'Trying again in 10s.', VERBOSE)
+                            time.sleep(10)
                     address_tokens: list = inbound_address.split(":")
                     host: int = address_tokens[0]
                     port: int = address_tokens[1]
@@ -272,7 +281,7 @@ class CoordinatorConnectionHandler(ConnectionHandler):
             elif tokens[0] == "set_subsequent_worker_address":
                 # Handle case where the subsequent node wasn't spawned yet and coordinator is waiting for it connect.
                 if tokens[1] == "wait":
-                    time.sleep(1)
+                    time.sleep(10)
                     self.send("get_subsequent_worker_address")
                 else:
                     host = tokens[1]
