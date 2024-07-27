@@ -149,9 +149,24 @@ def visualize_accuracy(data_path: str, save_pdf: bool = False):
     plt.show()
 
 
-def visualize_proving_times(data_path: str, save_pdf: bool = False):
-    df = pd.read_csv(data_path)
+def visualize_proving_and_setup_times(data_path_proving: str, data_path_setup: str, save_pdf: bool = False):
+    df = pd.read_csv(data_path_proving)
+    df2 = pd.read_csv(data_path_setup)
+    df = pd.merge(df, df2, on=['model_id', 'num_shards'])
     df['model_id'] = df['model_id'].replace({'mlp': 'MLP', 'cnn': 'CNN', 'testing': 'Testing'})
+
+    df = pd.melt(df,
+                 id_vars=["model_id", "num_shards"],
+                 value_vars=["total_proof_generation_time", "total_setup_time"],
+                 var_name="Step",
+                 value_name="time"
+                 )
+    df['Step'] = df['Step'].replace({
+        'total_proof_generation_time': 'Proof Generation',
+        'total_setup_time': 'Setup'
+    })
+
+    df = df.rename(columns={"model_id": "Model"})
 
     plt.style.use('science')
 
@@ -160,21 +175,21 @@ def visualize_proving_times(data_path: str, save_pdf: bool = False):
     sns.scatterplot(
         data=df,
         x='num_shards',
-        y='total_proof_generation_time',
-        hue='model_id',
-        # style='model',
+        y='time',
+        hue='Model',
+        style='Step',
         s=250
     )
 
     plt.xlabel('No. of nodes/shards', fontsize=20)
     plt.ylabel('Cumulative proving time (s)', fontsize=20)
-    plt.title('Proving Time', fontsize=24)
+    plt.title('Setup and Proving Time', fontsize=24)
 
     plt.tick_params(axis='both', which='major', labelsize=16)
 
     plt.xticks(df['num_shards'].unique())
 
-    plt.legend(title='Model', title_fontsize=16, prop={'size': 16}, loc='upper left')
+    plt.legend(title_fontsize=16, prop={'size': 16}, loc='upper left')
 
     plt.ylim(bottom=0)
 
@@ -265,7 +280,7 @@ def visualize_vk_and_pk_sizes(data_path: str, save_pdf: bool = False):
 
     plt.legend(title_fontsize=16, prop={'size': 16}, loc='upper left')
 
-    plt.ylim(bottom=0)
+    plt.ylim(bottom=0, top=(df['size'].max() * 1.5))
 
     plt.tight_layout()
     if save_pdf:
@@ -330,7 +345,7 @@ def visualize_proof_and_witness_sizes(data_path: str, save_pdf: bool = False):
 
 if __name__ == '__main__':
     visualize_accuracy('results/final/accuracy_benchmark_all.csv', True)
-    visualize_proving_times('results/cumulative_proving_time.csv', True)
+    visualize_proving_and_setup_times('results/cumulative_proving_time.csv', 'results/cumulative_setup_time.csv', True)
     visualize_witness_times('results/cumulative_witness_time.csv', True)
     visualize_vk_and_pk_sizes('results/file_sizes.csv', True)
     visualize_proof_and_witness_sizes('results/file_sizes.csv', True)

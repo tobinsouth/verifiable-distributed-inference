@@ -61,6 +61,16 @@ if __name__ == '__main__':
             tmp_verification_data = pd.read_csv(f'{folder_path}/verification_data.csv')
             df_verification_data = pd.concat([df_verification_data, tmp_verification_data], ignore_index=True)
 
+    df_cumulative_setup_time = df_setup_data.groupby(['setup_id']).agg({
+        'setup_time': 'sum',
+        'shard_id': 'count',
+        'model_id': 'first',
+    }).reset_index()
+
+    df_cumulative_setup_time.columns = ['setup_id', 'total_setup_time', 'num_shards', 'model_id']
+    df_cumulative_setup_time = df_cumulative_setup_time.drop(columns=['setup_id'])
+    df_cumulative_setup_time = df_cumulative_setup_time[['model_id', 'num_shards', 'total_setup_time']]
+
     # Aggregate data
     df_cumulative_proving_time = df_proving_data.groupby(['setup_id']).agg({
         'proof_generation_time': 'sum',
@@ -114,6 +124,7 @@ if __name__ == '__main__':
 
     # Save data
     os.makedirs(RESULTS_DIR, exist_ok=True)
+    df_cumulative_setup_time.to_csv(f'{RESULTS_DIR}/cumulative_setup_time.csv', index=False)
     df_cumulative_proving_time.to_csv(f'{RESULTS_DIR}/cumulative_proving_time.csv', index=False)
     df_file_sizes.to_csv(f'{RESULTS_DIR}/file_sizes.csv', index=False)
     df_cumulative_witness_time.to_csv(f'{RESULTS_DIR}/cumulative_witness_time.csv', index=False)
