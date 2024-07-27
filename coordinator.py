@@ -193,8 +193,9 @@ class Coordinator:
             self.socket.bind(address)
             self.socket.listen()
             conditional_print(f'[LOGIC] Coordinator socket is listening')
+            time.sleep(5)
         except Exception as e:
-            print(e)
+            print('ERROR OPENING SOCKET', e)
 
 
     # Intermediate function that adds a witness_id to the witness_manager.
