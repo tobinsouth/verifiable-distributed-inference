@@ -152,23 +152,24 @@ class Prover:
         else:
             conditional_print(f"[PREPROCESSING] ezkl SRS already downloaded", VERBOSE)
 
-        if USE_EZKL_CLI:
-            return_code_setup = os.system(f'ezkl setup '
-                                          f'--compiled-circuit {self.file_manager.get_compiled_circuit_path()} '
-                                          f'--vk-path {self.file_manager.get_vk_path()} '
-                                          f'--pk-path {self.file_manager.get_pk_path()} '
-                                          f'--srs-path {self.file_manager.get_srs_path()}')
-            if return_code_setup != 0:
-                conditional_print(f"[ERROR] Unable to complete final ezkl setup", VERBOSE)
-        else:
-            result_setup = ezkl.setup(
-                model=self.file_manager.get_compiled_circuit_path(),
-                vk_path=self.file_manager.get_vk_path(),
-                pk_path=self.file_manager.get_pk_path(),
-                srs_path=self.file_manager.get_srs_path()
-            )
-            if not result_setup:
-                conditional_print(f"[ERROR] Unable to complete final ezkl setup", VERBOSE)
+        if not os.path.isfile(self.file_manager.get_vk_path()) or not os.path.isfile(self.file_manager.get_pk_path()):
+            if USE_EZKL_CLI:
+                return_code_setup = os.system(f'ezkl setup '
+                                              f'--compiled-circuit {self.file_manager.get_compiled_circuit_path()} '
+                                              f'--vk-path {self.file_manager.get_vk_path()} '
+                                              f'--pk-path {self.file_manager.get_pk_path()} '
+                                              f'--srs-path {self.file_manager.get_srs_path()}')
+                if return_code_setup != 0:
+                    conditional_print(f"[ERROR] Unable to complete final ezkl setup", VERBOSE)
+            else:
+                result_setup = ezkl.setup(
+                    model=self.file_manager.get_compiled_circuit_path(),
+                    vk_path=self.file_manager.get_vk_path(),
+                    pk_path=self.file_manager.get_pk_path(),
+                    srs_path=self.file_manager.get_srs_path()
+                )
+                if not result_setup:
+                    conditional_print(f"[ERROR] Unable to complete final ezkl setup", VERBOSE)
 
     # Generate witness file
     async def generate_witness(self, witness_id: str) -> None:
