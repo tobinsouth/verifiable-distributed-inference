@@ -64,37 +64,86 @@ class MLPModel(nn.Module):
         return x
 
 
-class CNNModel(nn.Module):
-    name = 'cnn'
+class MLP2Model(nn.Module):
+    name = 'mlp2'
 
     model_dimensions = [
-        (32, 1, 28, 28),
-        (32, 10, 28, 28),
-        (32, 10, 28, 28),
-        (32, 10, 14, 14),
-        (32, 25, 14, 14),
-        (32, 25, 14, 14),
-        (32, 25, 7, 7),
-        (32, 1225),
-        (32, 50),
-        (32, 50),
-        (32, 10),
-        (32, 10)
+        (1, 1, 28, 28),
+        (1, 28*28),
+        (1, 500),
+        (1, 500),
+        (1, 250),
+        (1, 250),
+        (1, 100),
+        (1, 100),
+        (1, 50),
+        (1, 50),
+        (1, 10),
+        (1, 10)
     ]
 
     def __init__(self):
         super().__init__()
-        self.conv1 = nn.Conv2d(1, 10, (5, 5), padding=2)  # Adding padding to maintain spatial dimensions
+        self.flatten = nn.Flatten()
+        self.linear1 = nn.Linear(28*28, 500)
+        self.sig1 = nn.Sigmoid()
+        self.linear2 = nn.Linear(500, 250)
+        self.sig2 = nn.Sigmoid()
+        self.linear3 = nn.Linear(250, 100)
+        self.dropout = nn.Dropout(0.5)
+        self.linear4 = nn.Linear(100, 50)
+        self.relu1 = nn.ReLU()
+        self.linear5 = nn.Linear(50, 10)
+        self.relu2 = nn.ReLU()
+        self.linear6 = nn.Linear(10, 1)
+
+    def forward(self, x):
+        x = self.flatten(x)
+        x = self.linear1(x)
+        x = self.sig1(x)
+        x = self.linear2(x)
+        x = self.sig2(x)
+        x = self.linear3(x)
+        x = self.dropout(x)
+        x = self.linear4(x)
+        x = self.relu1(x)
+        x = self.linear5(x)
+        x = self.relu2(x)
+        x = self.linear6(x)
+        return x
+
+
+class CNNModel(nn.Module):
+    name = 'cnn'
+
+    model_dimensions = [
+        (3, 1, 28, 28),
+        (3, 5, 28, 28),
+        (3, 5, 28, 28),
+        (3, 5, 14, 14),
+        (3, 10, 14, 14),
+        (3, 10, 14, 14),
+        (3, 10, 7, 7),
+        (3, 490),
+        (3, 50),
+        (3, 50),
+        (3, 10),
+        (3, 10)
+    ]
+
+    def __init__(self):
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 5, (5, 5), padding=2)
         self.relu1 = nn.ReLU()
         self.maxpool1 = nn.MaxPool2d((2, 2), (2, 2))
 
-        self.conv2 = nn.Conv2d(10, 25, (5, 5), padding=2)  # Adding padding to maintain spatial dimensions
+        self.conv2 = nn.Conv2d(5, 10, (5, 5), padding=2)
         self.relu2 = nn.ReLU()
         self.maxpool2 = nn.MaxPool2d((2, 2), (2, 2))
 
         self.flatten = nn.Flatten()
 
-        self.fc1 = nn.Linear(25 * 7 * 7, 50)
+        self.fc1 = nn.Linear(10 * 7 * 7, 50)
         self.relu3 = nn.ReLU()
 
         self.fc2 = nn.Linear(50, 10)
@@ -246,6 +295,7 @@ class TestingModel(nn.Module):
 
 AVAILABLE_MODELS = [
     MLPModel.name,
+    MLP2Model.name,
     CNNModel.name,
     AttentionModel.name,
     TestingModel.name

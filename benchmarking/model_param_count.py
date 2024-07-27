@@ -2,7 +2,7 @@ import os
 
 import pandas as pd
 
-from modules.model_training import MLPModel, CNNModel, AttentionModel
+from modules.model_training import MLPModel, CNNModel, AttentionModel, MLP2Model
 
 OUTPUT_DIR = './results'
 
@@ -11,11 +11,18 @@ if __name__ == '__main__':
 
     rows = []
 
-    linear_relu_model = MLPModel()
-    total_params_linear_relu = sum(p.numel() for p in linear_relu_model.parameters())
+    mlp_model = MLPModel()
+    total_params_mlp = sum(p.numel() for p in mlp_model.parameters())
     rows.append({
-        'model': linear_relu_model.name,
-        'num_params': total_params_linear_relu
+        'model': mlp_model.name,
+        'num_params': total_params_mlp
+    })
+
+    mlp2_model = MLP2Model()
+    total_params_mlp2 = sum(p.numel() for p in mlp2_model.parameters())
+    rows.append({
+        'model': mlp2_model.name,
+        'num_params': total_params_mlp2
     })
 
     cnn_model = CNNModel()
