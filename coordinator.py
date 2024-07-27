@@ -150,7 +150,11 @@ class Coordinator:
                 message: bytes = b'run_inference|' + encoded_np_arr
                 first_node_handler.send_bytes(message)
 
-                time.sleep(sleep_time_seconds)
+                while len(self.witness_manager.witness_to_shard_map) < self.num_shards:
+                    conditional_print(
+                        f'[LOGIC] Still waiting for all witnesses to be generated. Retrying in {sleep_time_seconds}s!',
+                        VERBOSE)
+                    time.sleep(sleep_time_seconds)
 
                 all_witnesses: list = list(self.witness_manager.witness_to_shard_map.keys())
                 # Get all proofs
