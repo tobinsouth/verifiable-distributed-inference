@@ -235,6 +235,10 @@ class Worker:
                 }
             )
 
+            # Persist setup data immediately. This is relevant if any issues occur after setup has completed
+            # , and we need to restart!
+            self.save_setup_data()
+
         conditional_print("[PREPROCESSING] ezkl setup completed", VERBOSE)
 
     # Runs onnx model (shard) with input data, creates and writes witness file.
@@ -346,32 +350,45 @@ class Worker:
             )
         self.coordinator_conn_handler.send(f'report_proof|{proof_path}')
 
-    # Persists logged benchmarking results
-    def save_benchmarking_results(self) -> None:
+    def save_setup_data(self) -> None:
         if not self.benchmarking_mode:
             return
 
-        df_witness_times = pd.DataFrame(self.witness_data)
-        df_proving_times = pd.DataFrame(self.proving_data)
         df_setup_times = pd.DataFrame(self.setup_data)
-
         data_dir: str = self.file_manager.get_benchmarking_results_dir()
-        witness_file: str = f'{data_dir}/witness_data.csv'
-        proving_file: str = f'{data_dir}/proving_data.csv'
         setup_file: str = f'{data_dir}/setup_data.csv'
-
-        save_dataframe(
-            file_path=witness_file,
-            df=df_witness_times
-        )
-        save_dataframe(
-            file_path=proving_file,
-            df=df_proving_times
-        )
         save_dataframe(
             file_path=setup_file,
             df=df_setup_times
         )
+        conditional_print(f'[BENCHMARKING] Saved setup data to {setup_file}', VERBOSE)
+
+    def save_witness_data(self) -> None:
+        if not self.benchmarking_mode:
+            return
+
+        df_witness_times = pd.DataFrame(self.witness_data)
+        data_dir: str = self.file_manager.get_benchmarking_results_dir()
+        witness_file: str = f'{data_dir}/witness_data.csv'
+        save_dataframe(
+            file_path=witness_file,
+            df=df_witness_times
+        )
+        conditional_print(f'[BENCHMARKING] Saved witness data to {witness_file}', VERBOSE)
+
+    def save_proving_data(self) -> None:
+        if not self.benchmarking_mode:
+            return
+
+        df_proving_times = pd.DataFrame(self.proving_data)
+        data_dir: str = self.file_manager.get_benchmarking_results_dir()
+        proving_file: str = f'{data_dir}/proving_data.csv'
+        save_dataframe(
+            file_path=proving_file,
+            df=df_proving_times
+        )
+        conditional_print(f'[BENCHMARKING] Saved proving data to {proving_file}', VERBOSE)
+
 
     # Triggers shutdown logic where connection handlers are stopped, sockets are closed and threads shutdown.
     def shutdown(self):

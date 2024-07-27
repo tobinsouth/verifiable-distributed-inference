@@ -285,7 +285,9 @@ class CoordinatorConnectionHandler(ConnectionHandler):
                 self.initiating_node.generate_proof(witness_id)
             # Coordinator triggers that benchmarking results are persisted.
             elif tokens[0] == "save_benchmarking_results":
-                self.initiating_node.save_benchmarking_results()
+                # Setup data is already saved at this point
+                self.initiating_node.save_witness_data()
+                self.initiating_node.save_proving_data()
             # Coordinator triggers node shutdown.
             elif tokens[0] == "shutdown":
                 self.initiating_node.shutdown()
