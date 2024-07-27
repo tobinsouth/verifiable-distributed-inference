@@ -30,6 +30,7 @@ if __name__ == '__main__':
     for model in AVAILABLE_MODELS:
         for num_shards in [1, 2, 3, 4, 6, 12]:
             setup_id: str = f'{model}-{num_shards}'
+            print(f'Handling {setup_id}')
             folder_path: str = f'{SYSTEM_BENCHMARK_DATA_PATH}/{setup_id}{BENCHMARKING_RESULTS_SUB_DIR}'
             if not os.path.exists(folder_path):
                 print(f'Folder {folder_path} does not exist!')
