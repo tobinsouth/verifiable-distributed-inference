@@ -174,9 +174,10 @@ class Coordinator:
                     # After nodes have been saved, trigger shutdown
                     # (this is important, as it properly frees up ports etc.)
                     handler.send('shutdown')
-                    time.sleep(sleep_time_seconds)
 
                 self.save_benchmarking_results()
+
+
         except KeyboardInterrupt:
             self.socket.close()
             for thread in self.connections.values():
@@ -290,6 +291,8 @@ class Coordinator:
             file_path=verification_file,
             df=df_verification
         )
+
+        conditional_print(f'[LOGIC] saved verification data to {verification_file}', VERBOSE)
 
 
 if __name__ == "__main__":
