@@ -139,6 +139,7 @@ class Coordinator:
             print('[LOGIC] Setup completed. Inference runs can now be served.')
 
             if self.benchmarking_mode:
+                sleep_time_seconds: int = 10 if self.model_name == 'mlp' else 60*3
                 handler_list: list[CoordinatorConnectionHandler] = list(self.handlers.values())
                 # The first node will receive all inference requests from the coordinator
                 first_node_handler: CoordinatorConnectionHandler = handler_list[0]
@@ -149,7 +150,7 @@ class Coordinator:
                 message: bytes = b'run_inference|' + encoded_np_arr
                 first_node_handler.send_bytes(message)
 
-                time.sleep(10)
+                time.sleep(sleep_time_seconds)
 
                 all_witnesses: list = list(self.witness_manager.witness_to_shard_map.keys())
                 # Get all proofs
@@ -159,17 +160,17 @@ class Coordinator:
                     connection_handler.send(f'get_proof|{witness}')
 
                 while set(self.witness_manager.verified_witnesses) != set(all_witnesses):
-                    conditional_print('[LOGIC] Still waiting for all proofs to be received. Retrying in 60s!', VERBOSE)
-                    time.sleep(60)
+                    conditional_print(f'[LOGIC] Still waiting for all proofs to be received. Retrying in {sleep_time_seconds}s!', VERBOSE)
+                    time.sleep(sleep_time_seconds)
 
                 # Triggers all workers to save their benchmarking results
                 for handler in handler_list:
                     handler.send('save_benchmarking_results')
-                    time.sleep(10)
+                    time.sleep(sleep_time_seconds)
                     # After nodes have been saved, trigger shutdown
                     # (this is important, as it properly frees up ports etc.)
                     handler.send('shutdown')
-                    time.sleep(10)
+                    time.sleep(sleep_time_seconds)
 
                 self.save_benchmarking_results()
         except KeyboardInterrupt:
