@@ -246,9 +246,9 @@ class AttentionModel(nn.Module):
 
 AVAILABLE_MODELS = [
     MLPModel.name,
+    MLP2Model.name,
     CNNModel.name,
-    AttentionModel.name,
-    MLP2Model.name
+    AttentionModel.name
 ]
 
 
@@ -260,6 +260,8 @@ class Trainer:
         # check if there's a specific model that should be used
         if model_name == MLPModel.name:
             self.model = MLPModel().to(DEVICE)
+        elif model_name == MLP2Model.name:
+            self.model = MLP2Model().to(DEVICE)
         elif model_name == CNNModel.name:
             self.model = CNNModel().to(DEVICE)
         elif model_name == AttentionModel.name:
