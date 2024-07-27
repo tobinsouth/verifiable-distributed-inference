@@ -192,6 +192,7 @@ class Coordinator:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
             self.socket.bind(address)
             self.socket.listen()
+            conditional_print(f'[LOGIC] Coordinator socket is listening')
         except Exception as e:
             print(e)
 
