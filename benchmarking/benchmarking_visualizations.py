@@ -115,6 +115,7 @@ def visualize_accuracy_alt(data_path: str):
 
 def visualize_accuracy(data_path: str, save_pdf: bool = False):
     df = pd.read_csv(data_path)
+    df = df[df.model != 'testing']
     df = df[df.model != 'attention']
     df['model'] = df['model'].replace({'mlp': 'MLP', 'cnn': 'CNN'})
 
@@ -132,7 +133,7 @@ def visualize_accuracy(data_path: str, save_pdf: bool = False):
     )
 
     plt.xlabel('No. of nodes/shards', fontsize=20)
-    plt.ylabel('Cumulative RMSE Loss', fontsize=20)
+    plt.ylabel('Cumulative RMSE loss', fontsize=20)
     plt.title('Accuracy Loss', fontsize=24)
 
     plt.tick_params(axis='both', which='major', labelsize=16)
@@ -140,7 +141,10 @@ def visualize_accuracy(data_path: str, save_pdf: bool = False):
     plt.xticks(df['num_nodes'].unique())
     plt.ylim(bottom=0)
 
-    plt.legend(title='Model', title_fontsize=16, prop={'size': 16})
+    plt.legend(title='Model',
+               title_fontsize=16,
+               prop={'size': 16},
+               bbox_to_anchor=(1, 1))
 
     plt.tight_layout()
     if save_pdf:
@@ -153,6 +157,7 @@ def visualize_proving_and_setup_times(data_path_proving: str, data_path_setup: s
     df = pd.read_csv(data_path_proving)
     df2 = pd.read_csv(data_path_setup)
     df = pd.merge(df, df2, on=['model_id', 'num_shards'])
+    df = df[df['model_id'] != 'testing']
     df['model_id'] = df['model_id'].replace({'mlp': 'MLP', 'cnn': 'CNN', 'testing': 'Testing'})
 
     df = pd.melt(df,
@@ -162,7 +167,7 @@ def visualize_proving_and_setup_times(data_path_proving: str, data_path_setup: s
                  value_name="time"
                  )
     df['Step'] = df['Step'].replace({
-        'total_proof_generation_time': 'Proof Generation',
+        'total_proof_generation_time': 'Prove',
         'total_setup_time': 'Setup'
     })
 
@@ -189,9 +194,13 @@ def visualize_proving_and_setup_times(data_path_proving: str, data_path_setup: s
 
     plt.xticks(df['num_shards'].unique())
 
-    plt.legend(title_fontsize=16, prop={'size': 16}, loc='upper left')
+    plt.legend(title_fontsize=16,
+               prop={'size': 16},
+               loc='upper left',
+               bbox_to_anchor=(1, 1))
 
-    plt.ylim(bottom=0)
+    # plt.ylim(bottom=0)
+    plt.yscale('log')
 
     plt.tight_layout()
     if save_pdf:
@@ -201,7 +210,8 @@ def visualize_proving_and_setup_times(data_path_proving: str, data_path_setup: s
 
 def visualize_witness_times(data_path: str, save_pdf: bool = False):
     df = pd.read_csv(data_path)
-    df['model_id'] = df['model_id'].replace({'mlp': 'MLP', 'cnn': 'CNN', 'testing': 'Testing'})
+    df = df[df['model_id'] != 'testing']
+    df['model_id'] = df['model_id'].replace({'mlp': 'MLP', 'cnn': 'CNN'})
 
     plt.style.use('science')
 
@@ -217,16 +227,21 @@ def visualize_witness_times(data_path: str, save_pdf: bool = False):
     )
 
     plt.xlabel('No. of nodes/shards', fontsize=20)
-    plt.ylabel('Cumulative Witness Generation Time (s)', fontsize=20)
+    plt.ylabel('Cumulative witness generation time (s)', fontsize=20)
     plt.title('Added Overhead', fontsize=24)
 
     plt.tick_params(axis='both', which='major', labelsize=16)
 
     plt.xticks(df['num_shards'].unique())
 
-    plt.legend(title='Model', title_fontsize=16, prop={'size': 16}, loc='upper left')
+    plt.legend(title='Model',
+               title_fontsize=16,
+               prop={'size': 16},
+               loc='upper left',
+               bbox_to_anchor=(1, 1))
 
-    plt.ylim(bottom=0)
+    # plt.ylim(bottom=0)
+    plt.yscale('log')
 
     plt.tight_layout()
     if save_pdf:
@@ -236,6 +251,7 @@ def visualize_witness_times(data_path: str, save_pdf: bool = False):
 
 def visualize_vk_and_pk_sizes(data_path: str, save_pdf: bool = False):
     df = pd.read_csv(data_path)
+    df = df[df['model_id'] != 'testing']
     df['model_id'] = df['model_id'].replace({
         'mlp': 'MLP',
         'cnn': 'CNN',
@@ -251,11 +267,11 @@ def visualize_vk_and_pk_sizes(data_path: str, save_pdf: bool = False):
         'total_pk_size': 'pk'
     })
 
-    df = df.rename(columns={"model_id": "Model", "key_size_type": "Key Type"})
+    df = df.rename(columns={"model_id": "Model", "key_size_type": "Key"})
 
     plt.style.use('science')
 
-    formatter = FuncFormatter(lambda x, pos: '%1.1fG' % (x * 1e-9))
+    #formatter = FuncFormatter(lambda x, pos: '%1.1fG' % (x * 1e-9))
 
     plt.figure(figsize=(11.69, 5.5), dpi=300)
 
@@ -264,23 +280,27 @@ def visualize_vk_and_pk_sizes(data_path: str, save_pdf: bool = False):
         x='num_shards',
         y='size',
         hue='Model',
-        style='Key Type',
+        style='Key',
         s=250
     )
 
     plt.xlabel('No. of nodes/shards', fontsize=20)
-    plt.ylabel('Cumulative Artifact Size (B)', fontsize=20)
+    plt.ylabel('Cumulative artifact size (B)', fontsize=20)
     plt.title('Verification and Proving Key Sizes', fontsize=24)
 
     plt.tick_params(axis='both', which='major', labelsize=16)
 
     plt.xticks(df['num_shards'].unique())
 
-    plt.gca().yaxis.set_major_formatter(formatter)
+    #plt.gca().yaxis.set_major_formatter(formatter)
 
-    plt.legend(title_fontsize=16, prop={'size': 16}, loc='upper left')
+    plt.legend(title_fontsize=16,
+               prop={'size': 16},
+               bbox_to_anchor=(1, 1))
 
-    plt.ylim(bottom=0, top=(df['size'].max() * 1.5))
+    #plt.ylim(bottom=0, top=(df['size'].max() * 1.5))
+    #plt.ylim(bottom=0)
+    plt.yscale('log')
 
     plt.tight_layout()
     if save_pdf:
@@ -290,10 +310,10 @@ def visualize_vk_and_pk_sizes(data_path: str, save_pdf: bool = False):
 
 def visualize_proof_and_witness_sizes(data_path: str, save_pdf: bool = False):
     df = pd.read_csv(data_path)
+    df = df[df['model_id'] != 'testing']
     df['model_id'] = df['model_id'].replace({
         'mlp': 'MLP',
-        'cnn': 'CNN',
-        'testing': 'Testing'
+        'cnn': 'CNN'
     })
     df = pd.melt(df,
                  id_vars=["model_id", "num_shards"],
@@ -324,18 +344,22 @@ def visualize_proof_and_witness_sizes(data_path: str, save_pdf: bool = False):
     )
 
     plt.xlabel('No. of nodes/shards', fontsize=20)
-    plt.ylabel('Cumulative Artifact size (B)', fontsize=20)
+    plt.ylabel('Cumulative artifact size (B)', fontsize=20)
     plt.title('Proof and Witness Sizes', fontsize=24)
 
     plt.tick_params(axis='both', which='major', labelsize=16)
 
     plt.xticks(df['num_shards'].unique())
 
-    plt.gca().yaxis.set_major_formatter(formatter)
+    #plt.gca().yaxis.set_major_formatter(formatter)
 
-    plt.legend(title_fontsize=16, prop={'size': 16}, loc='upper left')
+    plt.legend(title_fontsize=16,
+               prop={'size': 16},
+               loc='upper left',
+               bbox_to_anchor=(1, 1))
 
-    plt.ylim(bottom=0)
+    #plt.ylim(bottom=0)
+    plt.yscale('log')
 
     plt.tight_layout()
     if save_pdf:
@@ -344,9 +368,9 @@ def visualize_proof_and_witness_sizes(data_path: str, save_pdf: bool = False):
 
 
 if __name__ == '__main__':
-    visualize_accuracy('results/final/accuracy_benchmark_all.csv', True)
-    visualize_proving_and_setup_times('results/cumulative_proving_time.csv', 'results/cumulative_setup_time.csv', True)
+    # visualize_accuracy('results/final/accuracy_benchmark_all.csv', True)
+    # visualize_proving_and_setup_times('results/cumulative_proving_time.csv', 'results/cumulative_setup_time.csv', True)
     visualize_witness_times('results/cumulative_witness_time.csv', True)
-    visualize_vk_and_pk_sizes('results/file_sizes.csv', True)
-    visualize_proof_and_witness_sizes('results/file_sizes.csv', True)
+    # visualize_vk_and_pk_sizes('results/file_sizes.csv', True)
+    # visualize_proof_and_witness_sizes('results/file_sizes.csv', True)
 
