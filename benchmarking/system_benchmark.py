@@ -11,7 +11,7 @@ from modules.model_training import AVAILABLE_MODELS
 
 
 def start_coordinator(host: str, port: int, num_shards: int, model_name: str, storage_dir: str):
-    print(f'Spawning coordinator on {host}:{port}')
+    print(f'[BENCHMARKING] Spawning coordinator on {host}:{port}')
     return subprocess.Popen(
         ['python', '../coordinator.py', host, str(port), str(num_shards), model_name, 'true', storage_dir],
         stdout=sys.stdout,
@@ -20,7 +20,7 @@ def start_coordinator(host: str, port: int, num_shards: int, model_name: str, st
 
 
 def start_worker(host: str, port: int, coordinator_host: str, coordinator_port: int, node_role: str, storage_dir: str):
-    print(f'Spawning worker on {host}:{port}')
+    print(f'[BENCHMARKING] Spawning worker on {host}:{port}')
     return subprocess.Popen(
         ['python', '../worker.py', host, str(port), coordinator_host, str(coordinator_port), node_role, 'true',
          storage_dir],
@@ -114,7 +114,7 @@ if __name__ == "__main__":
         port_offset_table[model_name_] = i * 1000
 
     for idx, num_workers in enumerate(num_node_list):
-        print(f"Running setup with {num_workers} workers")
+        print(f"[BENCHMARKING] Running setup with {num_workers} workers")
 
         # This makes sure the coordinator and workers never spawn on the same port
         additional_offset: int = 10 * num_workers
@@ -127,4 +127,4 @@ if __name__ == "__main__":
             port_offset=port_offset_table[model_name] + additional_offset,
             storage_dir=storage_dir
         )
-        print(f"Setup with {num_workers} workers completed")
+        print(f"[BENCHMARKING] Setup with {num_workers} workers completed")

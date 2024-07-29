@@ -78,7 +78,7 @@ class WorkerConnectionHandler(ConnectionHandler):
                 message += buffer
             # Empty message -> we assume the connection was shut down.
             if not data:
-                print(f"Connection was shut down by {self.address}")
+                print(f"[MESSAGING] Connection was shut down by {self.address}")
                 self.RUNNING = False
                 return
 
@@ -230,7 +230,7 @@ class CoordinatorConnectionHandler(ConnectionHandler):
                             break
                         except Exception as e:
                             print(e)
-                            conditional_print(f'Inbound address for {subsequent_node_address} not set yet. '
+                            conditional_print(f'[MESSAGING] Inbound address for {subsequent_node_address} not set yet. '
                                               f'Trying again in 10s.', VERBOSE)
                             time.sleep(10)
                     address_tokens: list = inbound_address.split(":")
