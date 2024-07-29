@@ -117,7 +117,11 @@ def visualize_accuracy(data_path: str, save_pdf: bool = False):
     df = pd.read_csv(data_path)
     df = df[df.model != 'testing']
     df = df[df.model != 'attention']
-    df['model'] = df['model'].replace({'mlp': 'MLP', 'cnn': 'CNN'})
+    df['model'] = df['model'].replace({
+        'mlp': 'MLP',
+        'cnn': 'CNN',
+        'mlp2': 'MLP2'
+    })
 
     plt.style.use('science')
 
@@ -158,7 +162,12 @@ def visualize_proving_and_setup_times(data_path_proving: str, data_path_setup: s
     df2 = pd.read_csv(data_path_setup)
     df = pd.merge(df, df2, on=['model_id', 'num_shards'])
     df = df[df['model_id'] != 'testing']
-    df['model_id'] = df['model_id'].replace({'mlp': 'MLP', 'cnn': 'CNN', 'testing': 'Testing'})
+    df['model_id'] = df['model_id'].replace({
+        'mlp': 'MLP',
+        'cnn': 'CNN',
+        'testing': 'Testing',
+        'mlp2': 'MLP2'
+    })
 
     df = pd.melt(df,
                  id_vars=["model_id", "num_shards"],
@@ -211,7 +220,11 @@ def visualize_proving_and_setup_times(data_path_proving: str, data_path_setup: s
 def visualize_witness_times(data_path: str, save_pdf: bool = False):
     df = pd.read_csv(data_path)
     df = df[df['model_id'] != 'testing']
-    df['model_id'] = df['model_id'].replace({'mlp': 'MLP', 'cnn': 'CNN'})
+    df['model_id'] = df['model_id'].replace({
+        'mlp': 'MLP',
+        'cnn': 'CNN',
+        'mlp2': 'MLP2'
+    })
 
     plt.style.use('science')
 
@@ -255,7 +268,7 @@ def visualize_vk_and_pk_sizes(data_path: str, save_pdf: bool = False):
     df['model_id'] = df['model_id'].replace({
         'mlp': 'MLP',
         'cnn': 'CNN',
-        'testing': 'Testing'
+        'mlp2': 'MLP2'
     })
     df = pd.melt(df,
                  id_vars=["model_id", "num_shards"],
@@ -267,7 +280,10 @@ def visualize_vk_and_pk_sizes(data_path: str, save_pdf: bool = False):
         'total_pk_size': 'pk'
     })
 
-    df = df.rename(columns={"model_id": "Model", "key_size_type": "Key"})
+    df = df.rename(columns={
+        "model_id": "Model",
+        "key_size_type": "Key"}
+    )
 
     plt.style.use('science')
 
@@ -313,7 +329,8 @@ def visualize_proof_and_witness_sizes(data_path: str, save_pdf: bool = False):
     df = df[df['model_id'] != 'testing']
     df['model_id'] = df['model_id'].replace({
         'mlp': 'MLP',
-        'cnn': 'CNN'
+        'cnn': 'CNN',
+        'mlp2': 'MLP2'
     })
     df = pd.melt(df,
                  id_vars=["model_id", "num_shards"],
@@ -326,7 +343,10 @@ def visualize_proof_and_witness_sizes(data_path: str, save_pdf: bool = False):
         'total_witness_size': 'Witness'
     })
 
-    df = df.rename(columns={"model_id": "Model", "artifact_type": "Artifact"})
+    df = df.rename(columns={
+        "model_id": "Model",
+        "artifact_type": "Artifact"}
+    )
 
     plt.style.use('science')
 
@@ -368,9 +388,9 @@ def visualize_proof_and_witness_sizes(data_path: str, save_pdf: bool = False):
 
 
 if __name__ == '__main__':
-    # visualize_accuracy('results/final/accuracy_benchmark_all.csv', True)
-    # visualize_proving_and_setup_times('results/cumulative_proving_time.csv', 'results/cumulative_setup_time.csv', True)
+    visualize_accuracy('results/final/accuracy_benchmark_all.csv', True)
+    visualize_proving_and_setup_times('results/cumulative_proving_time.csv', 'results/cumulative_setup_time.csv', True)
     visualize_witness_times('results/cumulative_witness_time.csv', True)
-    # visualize_vk_and_pk_sizes('results/file_sizes.csv', True)
-    # visualize_proof_and_witness_sizes('results/file_sizes.csv', True)
+    visualize_vk_and_pk_sizes('results/file_sizes.csv', True)
+    visualize_proof_and_witness_sizes('results/file_sizes.csv', True)
 
