@@ -8,6 +8,7 @@ import os
 import sys
 import shutil
 import time
+import uuid
 from typing import Tuple
 
 import ezkl
@@ -138,6 +139,7 @@ def run_benchmark(ezkl_optimization_goal: str, num_nodes: int, model_name: str) 
         model_name=model_name
     )
     model = trainer.model
+
     # Setup processor
     processor: Processor = Processor(
         model=model,
@@ -145,6 +147,7 @@ def run_benchmark(ezkl_optimization_goal: str, num_nodes: int, model_name: str) 
     )
     # Shard model into `num_nodes` shards
     processor.shard(num_nodes)
+
     processor.save(
         model_id=model_id,
         storage_dir=f'{STORAGE_DIR}/shards',
@@ -242,15 +245,92 @@ def run_benchmark(ezkl_optimization_goal: str, num_nodes: int, model_name: str) 
     return total_loss
 
 
+def run_benchmark_with_existing_artifacts(num_nodes: int, model_name: str) -> float:
+    # TODO: figure out why this generates very high loss values!
+    setup_id: str = f'{model_name}-{num_nodes}'
+    if not os.path.exists(f'{STORAGE_DIR}/{setup_id}'):
+        print(f'PATH {STORAGE_DIR}/{setup_id} doesn\'t exist!, skipping configuration!')
+
+    total_loss: float = 0
+
+    # Setup trainer
+    trainer = Trainer(
+        load_training_data=False,
+        model_name=model_name
+    )
+    model = trainer.model
+
+    # Setup processor
+    processor: Processor = Processor(
+        model=model,
+        sample_input=torch.randn(*model.model_dimensions[0]).to(DEVICE)
+    )
+    # Shard model into `num_nodes` shards
+    processor.shard(num_nodes)
+
+    shards: list = processor.shards
+    shard_dimensions: list = processor.shard_dimensions
+
+    prev_output = torch.randn(*shard_dimensions[0]).to(DEVICE)
+    for i in range(num_nodes):
+        witness_id: str = f"acc_bench_{uuid.uuid4().hex}"
+
+        # Define filepaths
+        raw_witness_path = f"{STORAGE_DIR}/{setup_id}/shard_{i}/{witness_id}_raw.json"
+        witness_path = f"{STORAGE_DIR}/{setup_id}/shard_{i}/{witness_id}.json"
+        compiled_model_path = f"{STORAGE_DIR}/{setup_id}/shard_{i}/{model_name}_network.compiled"
+
+        tensor_output = shards[i](prev_output).to(DEVICE)
+        # convert tensor to numpy array
+        try:
+            target = tensor_output.to(DEVICE).numpy().astype(np.float32)
+            witness_input = prev_output.numpy().astype(np.float32)
+        except RuntimeError as e:
+            target = tensor_output.to(DEVICE).detach().numpy().astype(np.float32)
+            witness_input = prev_output.detach().numpy().astype(np.float32)
+
+        # Write out (raw) witness data
+        witness_data = dict(
+            input_shapes=[witness_input.shape],
+            input_data=[witness_input.reshape([-1]).tolist()],
+            output_data=[o.reshape([-1]).tolist() for o in target]
+        )
+        json.dump(witness_data, open(raw_witness_path, 'w'))
+
+        # Generate witness with existing artifacts
+        asyncio.run(gen_witness(
+            witness_path=witness_path,
+            raw_witness_path=raw_witness_path,
+            compiled_model_path=compiled_model_path,
+        ))
+
+        witness_data = open(witness_path, 'r')
+        json_data = json.load(witness_data)
+        output = json_data['pretty_elements']['rescaled_outputs'][0]
+        output = np.asarray(output)
+
+        # compare output and target
+        loss: float = rmse(output, target)
+        print(f'Shard results: RMSE: {rmse(output, target)}, RMSPE: {rmspe(output, target)}')
+        # add to loss, as we're calculating the cumulative loss
+        total_loss += loss
+
+        # Update tensor for following shard
+        prev_output = tensor_output
+
+    return total_loss
+
+
 if __name__ == '__main__':
     # Example usage:
     # python accuracy_benchmark.py mlp ./tmp-mlp
     # python accuracy_benchmark.py cnn ./tmp-cnn
-    # python accuracy_benchmark.py attention ./tmp-attention
+    # python accuracy_benchmark.py mlp2 ./tmp-system-benchmark true
+    # python accuracy_benchmark.py mlp2 ./tmp-system-benchmark true 4
 
     if len(sys.argv) < 2:
         print("Invalid usage!")
-        print(f'Usage: accuracy_benchmark <model> [storage_dir] [num_nodes]')
+        print(f'Usage: accuracy_benchmark <model> [storage_dir] [use_existing_artifacts] [num_nodes]')
         print(f'Available models are: {", ".join(AVAILABLE_MODELS)}')
         sys.exit(1)
 
@@ -262,11 +342,17 @@ if __name__ == '__main__':
     if len(sys.argv) == 3:
         STORAGE_DIR = sys.argv[2]
 
-    num_node_list: list[int] = []
-    default_num_node_list: list[int] = [1, 2, 3, 4, 6, 12]
+    use_existing_artifacts: bool = False
     if len(sys.argv) == 4:
         STORAGE_DIR = sys.argv[2]
-        num_nodes = int(sys.argv[3])
+        use_existing_artifacts = sys.argv[3] == 'true'
+
+    num_node_list: list[int] = []
+    default_num_node_list: list[int] = [1, 2, 3, 4, 6, 12]
+    if len(sys.argv) == 5:
+        STORAGE_DIR = sys.argv[2]
+        use_existing_artifacts = sys.argv[3] == 'true'
+        num_nodes = int(sys.argv[4])
         if num_nodes not in default_num_node_list:
             print(f'Invalid value for num_nodes: {num_nodes} (must be between any one of: {default_num_node_list})')
             sys.exit(1)
@@ -288,13 +374,23 @@ if __name__ == '__main__':
     for optimization_goal in ['resources']:
         for num_nodes in num_node_list:
             print(f'Running config for: Model {model_name} with {optimization_goal} goal and {num_nodes} nodes')
-            accuracy_loss = run_benchmark(optimization_goal, num_nodes, model_name)
+            if use_existing_artifacts:
+                accuracy_loss = run_benchmark_with_existing_artifacts(
+                    num_nodes=num_nodes,
+                    model_name=model_name
+                )
+            else:
+                accuracy_loss = run_benchmark(
+                    ezkl_optimization_goal=optimization_goal,
+                    num_nodes=num_nodes,
+                    model_name=model_name
+                )
             print(f'Completed benchmarking for: {optimization_goal} with {num_nodes} nodes -> {accuracy_loss}')
             row = {
                 'ezkl_optimization_goal': optimization_goal,
                 'num_nodes': num_nodes,
                 'accuracy_loss': accuracy_loss,
-                'reference_accuracy_loss': 0,  # Reference value for the 'ideal' loss value
+                'reference_accuracy_loss': 0,
                 'model': model_name
             }
             print(row)
