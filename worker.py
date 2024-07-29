@@ -154,9 +154,8 @@ class Worker:
         try:
             # Waits until this node has received the address it needs to connect to.
             while self.outbound_worker_address is None:
-                if VERBOSE:
-                    print("Next worker address not set yet. Sleeping for 10s, then trying again.")
-                    time.sleep(10)
+                conditional_print("[LOGIC] Next worker address not set yet. Sleeping for 10s, then trying again.", VERBOSE)
+                time.sleep(10)
             self.outbound_worker_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
             self.outbound_worker_socket.connect(self.outbound_worker_address)
             conditional_print(f"[LOGIC] Connected to Worker @ {self.outbound_worker_address}", VERBOSE)
