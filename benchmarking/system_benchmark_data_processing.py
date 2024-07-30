@@ -62,6 +62,12 @@ if __name__ == '__main__':
             tmp_verification_data = pd.read_csv(f'{folder_path}/verification_data.csv')
             df_verification_data = pd.concat([df_verification_data, tmp_verification_data], ignore_index=True)
 
+    # tmp: write out all files
+    df_proving_data.to_csv(f'{RESULTS_DIR}/proving_data.csv', index=False)
+    df_verification_data.to_csv(f'{RESULTS_DIR}/verification_data.csv', index=False)
+    df_setup_data.to_csv(f'{RESULTS_DIR}/setup_data.csv', index=False)
+    df_witness_data.to_csv(f'{RESULTS_DIR}/witness_data.csv', index=False)
+
     df_cumulative_setup_time = df_setup_data.groupby(['setup_id']).agg({
         'setup_time': 'sum',
         'shard_id': 'count',
