@@ -3,7 +3,50 @@ import pandas as pd
 import seaborn as sns
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import scienceplots
-from matplotlib.ticker import FuncFormatter
+from matplotlib.ticker import FuncFormatter, FixedLocator, FixedFormatter
+
+
+def custom_byte_formatter(x, pos):
+    if x == 1:
+        return '1 B'
+    elif x == 10 ** 1:
+        return '10 B'
+    elif x == 10 ** 2:
+        return '100 B'
+    elif x == 10 ** 3:
+        return '1 KB'
+    elif x == 10 ** 4:
+        return '10 KB'
+    elif x == 10 ** 5:
+        return '100 KB'
+    elif x == 10 ** 6:
+        return '1 MB'
+    elif x == 10 ** 7:
+        return '10 MB'
+    elif x == 10 ** 8:
+        return '100 MB'
+    elif x == 10 ** 9:
+        return '1 GB'
+    elif x == 10 ** 10:
+        return '10 GB'
+    elif x == 10 ** 11:
+        return '100 GB'
+    elif x == 10 ** 12:
+        return '1 TB'
+    else:
+        return ''
+
+
+def custom_time_formatter(x, pos):
+    if 0 <= x <= 60:
+        return f'{x:.0f} s'
+    elif 60 < x <= 60*60:
+        return f'{(x/60):.0f} m'
+    elif 60*60 < x <= 60*60*24:
+        return f'{(x/(60*60)):.0f} h'
+    else:
+        return ''
+
 
 
 def visualize_accuracy_old_1(data_path: str):
@@ -143,11 +186,13 @@ def visualize_accuracy(data_path: str, save_pdf: bool = False):
     plt.tick_params(axis='both', which='major', labelsize=16)
 
     plt.xticks(df['num_nodes'].unique())
-    plt.ylim(bottom=0)
+    #plt.ylim(bottom=0)
+    plt.yscale('log')
 
     plt.legend(title='Model',
                title_fontsize=16,
                prop={'size': 16},
+               loc='upper left',
                bbox_to_anchor=(1, 1))
 
     plt.tight_layout()
@@ -210,6 +255,7 @@ def visualize_proving_and_setup_times(data_path_proving: str, data_path_setup: s
 
     # plt.ylim(bottom=0)
     plt.yscale('log')
+    plt.gca().yaxis.set_major_formatter(FuncFormatter(custom_time_formatter))
 
     plt.tight_layout()
     if save_pdf:
@@ -253,8 +299,8 @@ def visualize_witness_times(data_path: str, save_pdf: bool = False):
                loc='upper left',
                bbox_to_anchor=(1, 1))
 
-    # plt.ylim(bottom=0)
     plt.yscale('log')
+    plt.gca().yaxis.set_major_formatter(FuncFormatter(custom_time_formatter))
 
     plt.tight_layout()
     if save_pdf:
@@ -287,8 +333,6 @@ def visualize_vk_and_pk_sizes(data_path: str, save_pdf: bool = False):
 
     plt.style.use('science')
 
-    #formatter = FuncFormatter(lambda x, pos: '%1.1fG' % (x * 1e-9))
-
     plt.figure(figsize=(11.69, 5.5), dpi=300)
 
     sns.scatterplot(
@@ -308,15 +352,13 @@ def visualize_vk_and_pk_sizes(data_path: str, save_pdf: bool = False):
 
     plt.xticks(df['num_shards'].unique())
 
-    #plt.gca().yaxis.set_major_formatter(formatter)
+    plt.yscale('log')
+    plt.gca().yaxis.set_major_formatter(FuncFormatter(custom_byte_formatter))
 
     plt.legend(title_fontsize=16,
                prop={'size': 16},
                bbox_to_anchor=(1, 1))
 
-    #plt.ylim(bottom=0, top=(df['size'].max() * 1.5))
-    #plt.ylim(bottom=0)
-    plt.yscale('log')
 
     plt.tight_layout()
     if save_pdf:
@@ -371,7 +413,8 @@ def visualize_proof_and_witness_sizes(data_path: str, save_pdf: bool = False):
 
     plt.xticks(df['num_shards'].unique())
 
-    #plt.gca().yaxis.set_major_formatter(formatter)
+    plt.yscale('log')
+    plt.gca().yaxis.set_major_formatter(FuncFormatter(custom_byte_formatter))
 
     plt.legend(title_fontsize=16,
                prop={'size': 16},
@@ -379,7 +422,7 @@ def visualize_proof_and_witness_sizes(data_path: str, save_pdf: bool = False):
                bbox_to_anchor=(1, 1))
 
     #plt.ylim(bottom=0)
-    plt.yscale('log')
+
 
     plt.tight_layout()
     if save_pdf:
@@ -388,8 +431,9 @@ def visualize_proof_and_witness_sizes(data_path: str, save_pdf: bool = False):
 
 
 if __name__ == '__main__':
-    visualize_accuracy('results/final/accuracy_benchmark_all.csv', True)
-    visualize_proving_and_setup_times('results/cumulative_proving_time.csv', 'results/cumulative_setup_time.csv', True)
+    visualize_accuracy('results/accuracy_benchmark_all.csv', True)
+    visualize_proving_and_setup_times('results/cumulative_proving_time.csv',
+                                      'results/cumulative_setup_time.csv', True)
     visualize_witness_times('results/cumulative_witness_time.csv', True)
     visualize_vk_and_pk_sizes('results/file_sizes.csv', True)
     visualize_proof_and_witness_sizes('results/file_sizes.csv', True)
