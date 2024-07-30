@@ -1,0 +1,5 @@
+,model,num_params
+0,mlp,711
+1,cnn,26461
+2,mlp2,548421
+3,attention,1191936
