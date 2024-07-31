@@ -7,7 +7,9 @@ from matplotlib.ticker import FuncFormatter, FixedLocator, FixedFormatter
 
 
 def custom_byte_formatter(x, pos):
-    if x == 1:
+    if x == 0:
+        return '0 B'
+    elif x == 1:
         return '1 B'
     elif x == 10 ** 1:
         return '10 B'
@@ -38,12 +40,14 @@ def custom_byte_formatter(x, pos):
 
 
 def custom_time_formatter(x, pos):
+    if x == 0:
+        return '0 s'
     if 0 <= x <= 60:
         return f'{x:.0f} s'
     elif 60 < x <= 60*60:
-        return f'{(x/60):.0f} m'
+        return f'{(x/60):.1f} m'
     elif 60*60 < x <= 60*60*24:
-        return f'{(x/(60*60)):.0f} h'
+        return f'{(x/(60*60)):.1f} h'
     else:
         return ''
 
@@ -300,6 +304,7 @@ def visualize_witness_times(data_path: str, save_pdf: bool = False):
                bbox_to_anchor=(1, 1))
 
     plt.yscale('log')
+    plt.ylim(top=10)
     plt.gca().yaxis.set_major_formatter(FuncFormatter(custom_time_formatter))
 
     plt.tight_layout()
@@ -353,6 +358,7 @@ def visualize_vk_and_pk_sizes(data_path: str, save_pdf: bool = False):
     plt.xticks(df['num_shards'].unique())
 
     plt.yscale('log')
+    plt.ylim(top=10**12, bottom=10**4)
     plt.gca().yaxis.set_major_formatter(FuncFormatter(custom_byte_formatter))
 
     plt.legend(title_fontsize=16,
@@ -414,6 +420,7 @@ def visualize_proof_and_witness_sizes(data_path: str, save_pdf: bool = False):
     plt.xticks(df['num_shards'].unique())
 
     plt.yscale('log')
+    plt.ylim(bottom=10**3, top=10**8)
     plt.gca().yaxis.set_major_formatter(FuncFormatter(custom_byte_formatter))
 
     plt.legend(title_fontsize=16,
@@ -421,7 +428,7 @@ def visualize_proof_and_witness_sizes(data_path: str, save_pdf: bool = False):
                loc='upper left',
                bbox_to_anchor=(1, 1))
 
-    #plt.ylim(bottom=0)
+
 
 
     plt.tight_layout()
@@ -435,6 +442,6 @@ if __name__ == '__main__':
     visualize_proving_and_setup_times('results/cumulative_proving_time.csv',
                                       'results/cumulative_setup_time.csv', True)
     visualize_witness_times('results/cumulative_witness_time.csv', True)
-    visualize_vk_and_pk_sizes('results/file_sizes.csv', True)
-    visualize_proof_and_witness_sizes('results/file_sizes.csv', True)
+    # visualize_vk_and_pk_sizes('results/file_sizes.csv', True)
+    # visualize_proof_and_witness_sizes('results/file_sizes.csv', True)
 
