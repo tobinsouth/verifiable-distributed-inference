@@ -245,7 +245,7 @@ def visualize_proving_and_setup_times(data_path_proving: str, data_path_setup: s
     )
 
     plt.xlabel('No. of nodes/shards', fontsize=20)
-    plt.ylabel('Cumulative proving time (s)', fontsize=20)
+    plt.ylabel('Cumulative proving time', fontsize=20)
     plt.title('Setup and Proving Time', fontsize=24)
 
     plt.tick_params(axis='both', which='major', labelsize=16)
@@ -290,7 +290,7 @@ def visualize_witness_times(data_path: str, save_pdf: bool = False):
     )
 
     plt.xlabel('No. of nodes/shards', fontsize=20)
-    plt.ylabel('Cumulative witness generation time (s)', fontsize=20)
+    plt.ylabel('Cumulative witness generation time', fontsize=20)
     plt.title('Added Overhead', fontsize=24)
 
     plt.tick_params(axis='both', which='major', labelsize=16)
@@ -350,7 +350,7 @@ def visualize_vk_and_pk_sizes(data_path: str, save_pdf: bool = False):
     )
 
     plt.xlabel('No. of nodes/shards', fontsize=20)
-    plt.ylabel('Cumulative artifact size (B)', fontsize=20)
+    plt.ylabel('Cumulative artifact size', fontsize=20)
     plt.title('Verification and Proving Key Sizes', fontsize=24)
 
     plt.tick_params(axis='both', which='major', labelsize=16)
@@ -412,7 +412,7 @@ def visualize_proof_and_witness_sizes(data_path: str, save_pdf: bool = False):
     )
 
     plt.xlabel('No. of nodes/shards', fontsize=20)
-    plt.ylabel('Cumulative artifact size (B)', fontsize=20)
+    plt.ylabel('Cumulative artifact size', fontsize=20)
     plt.title('Proof and Witness Sizes', fontsize=24)
 
     plt.tick_params(axis='both', which='major', labelsize=16)
@@ -442,6 +442,6 @@ if __name__ == '__main__':
     visualize_proving_and_setup_times('results/cumulative_proving_time.csv',
                                       'results/cumulative_setup_time.csv', True)
     visualize_witness_times('results/cumulative_witness_time.csv', True)
-    # visualize_vk_and_pk_sizes('results/file_sizes.csv', True)
-    # visualize_proof_and_witness_sizes('results/file_sizes.csv', True)
+    visualize_vk_and_pk_sizes('results/file_sizes.csv', True)
+    visualize_proof_and_witness_sizes('results/file_sizes.csv', True)
 
