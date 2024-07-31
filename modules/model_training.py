@@ -352,6 +352,10 @@ class Trainer:
             print("(Down)loaded MNIST dataset")
 
     def train(self) -> None:
+        # Deactivate for now
+        print('Testing deactivated.')
+        return
+
         if not self.load_training_data:
             print("Training data not loaded. Can't train model")
             return
@@ -372,6 +376,9 @@ class Trainer:
                     print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
     def test(self) -> None:
+        # Deactivate for now
+        print('Testing deactivated.')
+        return
         if not self.load_training_data:
             print("Test data not loaded. Can't train model")
             return

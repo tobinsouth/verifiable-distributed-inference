@@ -14,6 +14,7 @@ STORAGE_DIR/
 """
 # Defines file structure
 STORAGE_DIR: str = "./shared-storage"
+# Folder structure within the STORAGE_DIR
 MODEL_SUB_DIR: str = "/shards"
 COORDINATOR_SUB_DIR: str = "/coordinator"
 BENCHMARKING_RESULTS_SUB_DIR: str = "/benchmarking_results"
