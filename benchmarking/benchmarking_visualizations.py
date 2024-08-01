@@ -4,7 +4,7 @@ import seaborn as sns
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import scienceplots
 from matplotlib.ticker import FuncFormatter, FixedLocator, FixedFormatter
-
+import matplotlib.patches as mpatches
 
 def custom_byte_formatter(x, pos):
     if x == 0:
@@ -184,6 +184,10 @@ def visualize_accuracy(data_path: str, save_pdf: bool = False):
         s=250
     )
 
+    handles, labels = plt.gca().get_legend_handles_labels()
+    patch = mpatches.Patch(color='white', label='Model')
+    handles.insert(0, patch)
+
     plt.xlabel('No. of nodes/shards', fontsize=20)
     plt.ylabel('Cumulative RMSE loss', fontsize=20)
     # plt.title('Accuracy Loss', fontsize=24)
@@ -195,12 +199,12 @@ def visualize_accuracy(data_path: str, save_pdf: bool = False):
     plt.yscale('log')
     plt.gca().xaxis.grid(False)
 
-    plt.legend(title='Model',
-               title_fontsize=16,
+    plt.legend(title_fontsize=16,
                prop={'size': 16},
                loc='upper left',
                bbox_to_anchor=(1, 1),
-               frameon=False)
+               frameon=False,
+               handles=handles)
 
     plt.tight_layout()
     if save_pdf:
@@ -262,7 +266,7 @@ def visualize_proving_and_setup_times(data_path_proving: str, data_path_setup: s
                bbox_to_anchor=(1, 1),
                frameon=False)
 
-    # plt.ylim(bottom=0)
+    plt.ylim(bottom=10, top=10 ** 4.5)
     plt.yscale('log')
     plt.gca().yaxis.set_major_formatter(FuncFormatter(custom_time_formatter))
     plt.gca().xaxis.grid(False)
@@ -296,6 +300,10 @@ def visualize_witness_times(data_path: str, save_pdf: bool = False):
         s=250
     )
 
+    handles, labels = plt.gca().get_legend_handles_labels()
+    patch = mpatches.Patch(color='white', label='Model')
+    handles.insert(0, patch)
+
     plt.xlabel('No. of nodes/shards', fontsize=20)
     plt.ylabel('Cumulative witness generation time', fontsize=20)
     # plt.title('Added Overhead', fontsize=24)
@@ -304,12 +312,12 @@ def visualize_witness_times(data_path: str, save_pdf: bool = False):
 
     plt.xticks(df['num_shards'].unique())
 
-    plt.legend(title='Model',
-               title_fontsize=16,
+    plt.legend(title_fontsize=16,
                prop={'size': 16},
                loc='upper left',
                bbox_to_anchor=(1, 1),
-               frameon=False)
+               frameon=False,
+               handles=handles)
 
     plt.yscale('log')
     plt.ylim(top=10)
@@ -454,10 +462,10 @@ def visualize_proof_and_witness_sizes(data_path: str, save_pdf: bool = False):
 
 
 if __name__ == '__main__':
-    visualize_accuracy('results/accuracy_benchmark_all.csv', True)
+    # visualize_accuracy('results/accuracy_benchmark_all.csv', True)
     visualize_proving_and_setup_times('results/cumulative_proving_time.csv',
                                       'results/cumulative_setup_time.csv', True)
-    visualize_witness_times('results/cumulative_witness_time.csv', True)
-    visualize_vk_and_pk_sizes('results/file_sizes.csv', True)
-    visualize_proof_and_witness_sizes('results/file_sizes.csv', True)
+    # visualize_witness_times('results/cumulative_witness_time.csv', True)
+    # visualize_vk_and_pk_sizes('results/file_sizes.csv', True)
+    # visualize_proof_and_witness_sizes('results/file_sizes.csv', True)
 
