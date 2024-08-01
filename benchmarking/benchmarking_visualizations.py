@@ -77,7 +77,7 @@ def visualize_accuracy_old_1(data_path: str):
 
     plt.xlabel('No. of nodes/shards')
     plt.ylabel('Cumulative RMSE Loss')
-    plt.title('Accuracy Loss')
+    # plt.title('Accuracy Loss')
     plt.legend()
 
     # plt.yticks(df['accuracy_loss'])
@@ -185,7 +185,7 @@ def visualize_accuracy(data_path: str, save_pdf: bool = False):
 
     plt.xlabel('No. of nodes/shards', fontsize=20)
     plt.ylabel('Cumulative RMSE loss', fontsize=20)
-    plt.title('Accuracy Loss', fontsize=24)
+    # plt.title('Accuracy Loss', fontsize=24)
 
     plt.tick_params(axis='both', which='major', labelsize=16)
 
@@ -246,7 +246,7 @@ def visualize_proving_and_setup_times(data_path_proving: str, data_path_setup: s
 
     plt.xlabel('No. of nodes/shards', fontsize=20)
     plt.ylabel('Cumulative proving time', fontsize=20)
-    plt.title('Setup and Proving Time', fontsize=24)
+    # plt.title('Setup and Proving Time', fontsize=24)
 
     plt.tick_params(axis='both', which='major', labelsize=16)
 
@@ -291,7 +291,7 @@ def visualize_witness_times(data_path: str, save_pdf: bool = False):
 
     plt.xlabel('No. of nodes/shards', fontsize=20)
     plt.ylabel('Cumulative witness generation time', fontsize=20)
-    plt.title('Added Overhead', fontsize=24)
+    # plt.title('Added Overhead', fontsize=24)
 
     plt.tick_params(axis='both', which='major', labelsize=16)
 
@@ -351,7 +351,7 @@ def visualize_vk_and_pk_sizes(data_path: str, save_pdf: bool = False):
 
     plt.xlabel('No. of nodes/shards', fontsize=20)
     plt.ylabel('Cumulative artifact size', fontsize=20)
-    plt.title('Verification and Proving Key Sizes', fontsize=24)
+    # plt.title('Verification and Proving Key Sizes', fontsize=24)
 
     plt.tick_params(axis='both', which='major', labelsize=16)
 
@@ -413,7 +413,7 @@ def visualize_proof_and_witness_sizes(data_path: str, save_pdf: bool = False):
 
     plt.xlabel('No. of nodes/shards', fontsize=20)
     plt.ylabel('Cumulative artifact size', fontsize=20)
-    plt.title('Proof and Witness Sizes', fontsize=24)
+    # plt.title('Proof and Witness Sizes', fontsize=24)
 
     plt.tick_params(axis='both', which='major', labelsize=16)
 
