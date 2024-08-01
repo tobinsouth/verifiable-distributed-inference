@@ -171,6 +171,7 @@ def visualize_accuracy(data_path: str, save_pdf: bool = False):
     })
 
     plt.style.use('science')
+    plt.style.use('grid')
 
     plt.figure(figsize=(11.69, 5.5), dpi=300)
 
@@ -190,14 +191,16 @@ def visualize_accuracy(data_path: str, save_pdf: bool = False):
     plt.tick_params(axis='both', which='major', labelsize=16)
 
     plt.xticks(df['num_nodes'].unique())
-    #plt.ylim(bottom=0)
+    plt.ylim(bottom=10 ** -5, top = 10 ** -1.7)
     plt.yscale('log')
+    plt.gca().xaxis.grid(False)
 
     plt.legend(title='Model',
                title_fontsize=16,
                prop={'size': 16},
                loc='upper left',
-               bbox_to_anchor=(1, 1))
+               bbox_to_anchor=(1, 1),
+               frameon=False)
 
     plt.tight_layout()
     if save_pdf:
@@ -232,6 +235,7 @@ def visualize_proving_and_setup_times(data_path_proving: str, data_path_setup: s
     df = df.rename(columns={"model_id": "Model"})
 
     plt.style.use('science')
+    plt.style.use('grid')
 
     plt.figure(figsize=(11.69, 5.5), dpi=300)
 
@@ -255,11 +259,13 @@ def visualize_proving_and_setup_times(data_path_proving: str, data_path_setup: s
     plt.legend(title_fontsize=16,
                prop={'size': 16},
                loc='upper left',
-               bbox_to_anchor=(1, 1))
+               bbox_to_anchor=(1, 1),
+               frameon=False)
 
     # plt.ylim(bottom=0)
     plt.yscale('log')
     plt.gca().yaxis.set_major_formatter(FuncFormatter(custom_time_formatter))
+    plt.gca().xaxis.grid(False)
 
     plt.tight_layout()
     if save_pdf:
@@ -277,6 +283,7 @@ def visualize_witness_times(data_path: str, save_pdf: bool = False):
     })
 
     plt.style.use('science')
+    plt.style.use('grid')
 
     plt.figure(figsize=(11.69, 5.5), dpi=300)
 
@@ -301,11 +308,13 @@ def visualize_witness_times(data_path: str, save_pdf: bool = False):
                title_fontsize=16,
                prop={'size': 16},
                loc='upper left',
-               bbox_to_anchor=(1, 1))
+               bbox_to_anchor=(1, 1),
+               frameon=False)
 
     plt.yscale('log')
     plt.ylim(top=10)
     plt.gca().yaxis.set_major_formatter(FuncFormatter(custom_time_formatter))
+    plt.gca().xaxis.grid(False)
 
     plt.tight_layout()
     if save_pdf:
@@ -337,6 +346,7 @@ def visualize_vk_and_pk_sizes(data_path: str, save_pdf: bool = False):
     )
 
     plt.style.use('science')
+    plt.style.use('grid')
 
     plt.figure(figsize=(11.69, 5.5), dpi=300)
 
@@ -360,10 +370,12 @@ def visualize_vk_and_pk_sizes(data_path: str, save_pdf: bool = False):
     plt.yscale('log')
     plt.ylim(top=10**12, bottom=10**4)
     plt.gca().yaxis.set_major_formatter(FuncFormatter(custom_byte_formatter))
+    plt.gca().xaxis.grid(False)
 
     plt.legend(title_fontsize=16,
                prop={'size': 16},
-               bbox_to_anchor=(1, 1))
+               bbox_to_anchor=(1, 1),
+               frameon=False)
 
 
     plt.tight_layout()
@@ -397,6 +409,7 @@ def visualize_proof_and_witness_sizes(data_path: str, save_pdf: bool = False):
     )
 
     plt.style.use('science')
+    plt.style.use('grid')
 
     formatter = FuncFormatter(lambda x, pos: '%1.1fK' % (x * 1e-3))
 
@@ -417,16 +430,19 @@ def visualize_proof_and_witness_sizes(data_path: str, save_pdf: bool = False):
 
     plt.tick_params(axis='both', which='major', labelsize=16)
 
+
     plt.xticks(df['num_shards'].unique())
 
     plt.yscale('log')
     plt.ylim(bottom=10**3, top=10**8)
     plt.gca().yaxis.set_major_formatter(FuncFormatter(custom_byte_formatter))
+    plt.gca().xaxis.grid(False)
 
     plt.legend(title_fontsize=16,
                prop={'size': 16},
                loc='upper left',
-               bbox_to_anchor=(1, 1))
+               bbox_to_anchor=(1, 1),
+               frameon=False)
 
 
 
