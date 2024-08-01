@@ -17,7 +17,7 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-Optionally, if you want to use ezkl's CLI version (v12.0.1), install is following: 
+Optionally, if you want to use ezkl's CLI version (v12.0.1), install as follows: 
 ```shell
 curl https://raw.githubusercontent.com/zkonduit/ezkl/main/install_ezkl_cli.sh | bash -s -- v12.0.1
 ```
@@ -25,8 +25,7 @@ If you wish to use ezkl's CLI version, keep `USE_EZKL_CLI = True` in [config.py]
 
 ## Run the Project
 
-First spawn a (1) coordinator
-Then spawn (N) workers
+First spawn a (1) coordinator, then spawn (N) workers **sequentially**.
 
 There are four (4) models available in [model_training.py](modules%2Fmodel_training.py):
 1. mlp: A simple 711 parameter MLP-style model
@@ -35,6 +34,9 @@ There are four (4) models available in [model_training.py](modules%2Fmodel_train
 4. attention: A large 1.19M parameter attention-style model
 
 When running the system, use one of the values above to set the model that's going to be used.
+
+**Warning:** mlp2 and attention require multiple hundred GB of free RAM space and take a significant time to run. 
+Use with caution! 
 
 ### Sample Usage:
 First spawn a coordinator.
